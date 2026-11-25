@@ -278,14 +278,28 @@
           headers: {
             apikey: SUPABASE_KEY,
             Authorization: 'Bearer ' + SUPABASE_KEY,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            Prefer: 'return=minimal'
           },
           body: JSON.stringify({
             authorized_at: new Date().toISOString(),
             authorized_by: currentOS.client_name || 'Cliente'
           })
         });
-        if (!r.ok) throw new Error('HTTP ' + r.status + ' — se a loja ainda não rodou a migração, execute supabase/migration_autorizacao.sql.');
+        if (!r.ok) {
+          let detail = '';
+          try {
+            const body = await r.json();
+            detail = body.message || body.hint || body.details || '';
+          } catch (err) {}
+          if (r.status === 404) {
+            throw new Error('Registro não encontrado (404). Atualize a página, confira o número da OS e tente novamente.');
+          }
+          if (/authorized_at|authorized_by|PGRST204|42703/i.test(detail)) {
+            throw new Error('A migração de autorização ainda não foi aplicada no banco. Execute supabase/migration_autorizacao.sql no SQL Editor do Supabase.');
+          }
+          throw new Error('HTTP ' + r.status + (detail ? ' — ' + detail : ''));
+        }
         await atualizarAgora(true);
         alert('Serviço autorizado com sucesso! A loja já foi avisada.');
       } catch (e) {

@@ -2139,9 +2139,19 @@
     // =========================================================================
     // CONSULSA DO CLIENTE + ACOMPANHAMENTO EM TEMPO REAL
     // =========================================================================
+    // Descobre a pasta do app mesmo quando a URL é aberta sem barra final
+    // (ex.: .../OS -> .../OS/), evitando links de acompanhamento com 404.
+    function appDirectoryUrl() {
+      const here = new URL(location.href);
+      let dir = here.pathname;
+      if (/\.[A-Za-z0-9]+$/.test(dir)) dir = dir.replace(/[^/]*$/, '');
+      if (!dir.endsWith('/')) dir += '/';
+      return here.origin + dir;
+    }
+
     function trackingLink(o) {
       // Página exclusiva do cliente: só consulta, sem acesso ao painel da loja
-      const base = new URL('cliente.html', location.href).href.split('?')[0].split('#')[0];
+      const base = new URL('cliente.html', appDirectoryUrl()).href;
       const pin = digitsOnly(o.clientPhone).slice(-4) || digitsOnly(o.clientCpf).slice(-4);
       return `${base}?os=${encodeURIComponent(o.number)}&pin=${encodeURIComponent(pin)}`;
     }
