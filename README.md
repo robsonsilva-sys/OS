@@ -10,6 +10,7 @@ Aplicativo de arquivo único (`index.html`), sem servidor e sem instalação: os
 - **Cadastro de OS em 1 Clique:** Seleção rápida de marca (Apple, Samsung, Motorola, Xiaomi, Realme, ASUS, LG), catálogo clicável de modelos, cores, checklist de entrada e desenho de padrão Android 3x3.
 - **Consulta em Tempo Real do Cliente:** Acompanhamento visual por etapas com número da OS e validação pelos **4 últimos dígitos** do telefone/CPF (o número pode ser digitado como `OS-0001`, `0001` ou `1`).
 - **Recibo de Quitação & Impressão:** Emissão de recibo pós-execução com forma de pagamento, garantia legal de 90 dias (CDC), envio formatado no WhatsApp e impressão em **Folha A4 / PDF** ou **Cupom Térmico 80mm**.
+- **Pré-visualização antes de imprimir/enviar:** o recibo e a OS abrem em uma tela de conferência com alternância entre **Recibo/OS** e **A4/Cupom 80mm**, aviso quando o pagamento ainda não foi registrado e botões de imprimir, salvar em PDF e enviar no WhatsApp.
 - **Clientes & Histórico:** Cadastro de clientes com histórico de todas as OS do aparelho/telefone.
 - **Edição e Exclusão de OS:** Alteração de status em um clique e exclusão com confirmação.
 - **Numeração sequencial:** as OS são numeradas em sequência e o número de uma OS excluída **não é reaproveitado**.

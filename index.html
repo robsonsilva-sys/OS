@@ -36,6 +36,20 @@
     .safe-pb { padding-bottom: max(10px, var(--safe-bottom)); }
     .pattern-grid { touch-action: none; user-select: none; }
 
+    .preview-paper {
+      background: #FFFFFF;
+      color: #000000;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+      border-radius: 2px;
+    }
+    .preview-paper-a4 { width: 210mm; max-width: 100%; min-height: 297mm; }
+    .preview-paper-thermal { width: 80mm; max-width: 100%; }
+    #preview-canvas { width: 100%; display: flex; justify-content: center; }
+    @media (max-width: 640px) {
+      .preview-paper-a4 { min-height: auto; }
+      .preview-paper > div { padding-left: 14px !important; padding-right: 14px !important; }
+    }
+
     /* Estilos de Impressão (A4 e 80mm) */
     @media print {
       body * { visibility: hidden !important; }
@@ -530,6 +544,53 @@
           O app abrirá em tela cheia, sem barra de navegador, com ícone personalizado <strong>RNC</strong>.
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PRÉ-VISUALIZAÇÃO DO DOCUMENTO (RECIBO / OS) -->
+  <div id="modal-preview" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex flex-col">
+    <!-- Barra de ações -->
+    <div class="shrink-0 bg-white border-b border-slate-200 px-3 py-2.5 md:px-5">
+      <div class="max-w-5xl mx-auto flex flex-wrap items-center gap-2 md:gap-3">
+        <div class="flex items-center gap-2 mr-auto min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+            <i data-lucide="eye" class="w-4.5 h-4.5"></i>
+          </div>
+          <div class="min-w-0">
+            <h3 id="preview-title" class="font-bold text-sm text-slate-900 truncate">Pré-visualização</h3>
+            <p class="text-[11px] text-slate-500">Confira antes de imprimir ou enviar</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1 p-1 rounded-xl bg-slate-100">
+          <button type="button" data-preview-type="receipt" onclick="setPreviewType('receipt')">Recibo</button>
+          <button type="button" data-preview-type="os" onclick="setPreviewType('os')">OS</button>
+        </div>
+
+        <div class="flex items-center gap-1 p-1 rounded-xl bg-slate-100">
+          <button type="button" data-preview-size="a4" onclick="setPreviewSize('a4')">A4</button>
+          <button type="button" data-preview-size="80mm" onclick="setPreviewSize('80mm')">Cupom 80mm</button>
+        </div>
+
+        <div class="flex items-center gap-1.5 ml-auto">
+          <button onclick="printFromPreview()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i> Imprimir / PDF
+          </button>
+          <button onclick="sendFromPreview()" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span id="preview-whatsapp-label">Enviar WhatsApp</span>
+          </button>
+          <button onclick="closePreview()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100" title="Fechar (Esc)">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documento -->
+    <div class="flex-1 overflow-auto p-3 md:p-6">
+      <div id="preview-warning" class="hidden max-w-2xl mx-auto mb-3 px-4 py-2.5 rounded-xl bg-amber-100 border border-amber-300 text-[11px] font-semibold text-amber-900"></div>
+      <div id="preview-canvas" class="mx-auto w-full"></div>
     </div>
   </div>
 
@@ -1533,13 +1594,13 @@
             </div>
 
             <div class="flex flex-wrap gap-2 pt-1">
-              <button onclick="printDocument('${o.id}', 'receipt-a4')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-xs font-semibold hover:bg-emerald-100">
-                <i data-lucide="file-check" class="w-3.5 h-3.5"></i> Recibo Quitação (A4 / PDF)
+              <button onclick="previewDocument('${o.id}', 'receipt-a4')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i> Visualizar Recibo
               </button>
-              <button onclick="printDocument('${o.id}', 'receipt-80mm')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-xs font-semibold hover:bg-emerald-100">
+              <button onclick="previewDocument('${o.id}', 'receipt-80mm')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-xs font-semibold hover:bg-emerald-100">
                 <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Recibo Térmico 80mm
               </button>
-              <button onclick="sendWhatsApp('${o.id}', true)" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800">
+              <button onclick="previewDocument('${o.id}', 'receipt-a4')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-xs font-semibold hover:bg-emerald-100">
                 <i data-lucide="send" class="w-3.5 h-3.5"></i> Enviar Recibo WhatsApp
               </button>
             </div>
@@ -1553,10 +1614,10 @@
             <button onclick="openTrackForOrder('${o.number}')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold hover:bg-blue-100">
               <i data-lucide="search-check" class="w-4 h-4"></i> Ver Tela do Cliente
             </button>
-            <button onclick="printDocument('${o.id}', 'os-a4')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200">
-              <i data-lucide="printer" class="w-4 h-4"></i> Imprimir OS (A4)
+            <button onclick="previewDocument('${o.id}', 'os-a4')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200">
+              <i data-lucide="eye" class="w-4 h-4"></i> Visualizar OS (A4)
             </button>
-            <button onclick="printDocument('${o.id}', 'os-80mm')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200">
+            <button onclick="previewDocument('${o.id}', 'os-80mm')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200">
               <i data-lucide="scroll-text" class="w-4 h-4"></i> Cupom OS (80mm)
             </button>
           </div>
@@ -1662,20 +1723,21 @@
     // =========================================================================
     // IMPRESSÃO (A4 E CUPOM TÉRMICO 80MM — OS E RECIBO DE QUITAÇÃO)
     // =========================================================================
-    function printDocument(id, mode) {
-      const o = orders.find(x => x.id === id);
-      if (!o) return;
-
+    function buildDocumentHTML(o, mode, preview = false) {
       const isThermal = mode.endsWith('80mm');
       const isReceipt = mode.startsWith('receipt');
       const todayStr = new Date().toLocaleString('pt-BR');
       const paidDateStr = o.paidAt ? new Date(o.paidAt).toLocaleString('pt-BR') : todayStr;
 
-      const wrapperStyle = isThermal
-        ? 'width: 76mm; margin: 0 auto; font-family: monospace; font-size: 11px; line-height: 1.35; padding: 6px;'
-        : 'width: 190mm; margin: 0 auto; font-family: Inter, Arial, sans-serif; font-size: 12px; line-height: 1.5; padding: 16px;';
+      const wrapperStyle = preview
+        ? (isThermal
+            ? 'width: 76mm; max-width: 100%; margin: 0 auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; line-height: 1.35; padding: 6mm; background: #fff;'
+            : 'width: 100%; max-width: 190mm; margin: 0 auto; font-family: Inter, Arial, sans-serif; font-size: 12px; line-height: 1.5; padding: 12mm; background: #fff;')
+        : (isThermal
+            ? 'width: 76mm; margin: 0 auto; font-family: monospace; font-size: 11px; line-height: 1.35; padding: 6px;'
+            : 'width: 190mm; margin: 0 auto; font-family: Inter, Arial, sans-serif; font-size: 12px; line-height: 1.5; padding: 16px;');
 
-      document.getElementById('print-area').innerHTML = `
+      return `
         <div style="${wrapperStyle}">
           <div style="text-align:center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 10px;">
             <strong style="font-size:${isThermal ? '15px' : '20px'};">ROBINHONETCELL</strong><br/>
@@ -1727,6 +1789,16 @@
           </div>
         </div>
       `;
+    }
+
+    function documentTitleFor(o, mode) {
+      const isReceipt = mode.startsWith('receipt');
+      return `${isReceipt ? 'Recibo' : 'OS'} ${o.number} - ${o.clientName}`;
+    }
+
+    function printDocument(id, mode) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
 
       const area = document.getElementById('print-area');
       const previousTitle = document.title;
@@ -1737,11 +1809,105 @@
       };
 
       // Nome sugerido do PDF/impressão: "Recibo OS-0001 - Cliente"
-      document.title = `${isReceipt ? 'Recibo' : 'OS'} ${o.number} - ${o.clientName}`;
+      document.title = documentTitleFor(o, mode);
+      area.innerHTML = buildDocumentHTML(o, mode);
       area.classList.remove('hidden');
       window.addEventListener('afterprint', cleanup);
       window.print();
       setTimeout(cleanup, 2000);
+    }
+
+    // =========================================================================
+    // PRÉ-VISUALIZAÇÃO DO DOCUMENTO (RECIBO / OS) ANTES DE IMPRIMIR OU ENVIAR
+    // =========================================================================
+    let previewState = { id: null, type: 'receipt', size: 'a4' };
+
+    function previewDocument(id, mode) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+
+      const [type, size] = String(mode).split('-');
+      previewState = { id, type: type === 'os' ? 'os' : 'receipt', size: size === '80mm' ? '80mm' : 'a4' };
+      renderPreview();
+      document.getElementById('modal-preview').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function previewMode() {
+      return `${previewState.type}-${previewState.size}`;
+    }
+
+    function setPreviewType(type) {
+      previewState.type = type;
+      renderPreview();
+    }
+
+    function setPreviewSize(size) {
+      previewState.size = size;
+      renderPreview();
+    }
+
+    function renderPreview() {
+      const o = orders.find(x => x.id === previewState.id);
+      if (!o) return;
+
+      const mode = previewMode();
+      const canvas = document.getElementById('preview-canvas');
+      const isThermal = previewState.size === '80mm';
+      const isReceipt = previewState.type === 'receipt';
+
+      canvas.innerHTML = `
+        <div class="preview-paper ${isThermal ? 'preview-paper-thermal' : 'preview-paper-a4'}">
+          ${buildDocumentHTML(o, mode, true)}
+        </div>
+      `;
+
+      document.getElementById('preview-title').textContent =
+        `${isReceipt ? 'Recibo de Quitação' : 'Ordem de Serviço'} — ${o.number}`;
+
+      document.querySelectorAll('[data-preview-type]').forEach(btn => {
+        const active = btn.dataset.previewType === previewState.type;
+        btn.className = 'px-3 py-1.5 rounded-lg text-[11px] font-bold transition ' + (
+          active ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+        );
+      });
+
+      document.querySelectorAll('[data-preview-size]').forEach(btn => {
+        const active = btn.dataset.previewSize === previewState.size;
+        btn.className = 'px-3 py-1.5 rounded-lg text-[11px] font-bold transition ' + (
+          active ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+        );
+      });
+
+      document.getElementById('preview-whatsapp-label').textContent =
+        isReceipt ? 'Enviar recibo no WhatsApp' : 'Enviar OS no WhatsApp';
+
+      const warning = document.getElementById('preview-warning');
+      if (isReceipt && !o.paid) {
+        warning.textContent = 'Atenção: o pagamento desta OS ainda não foi registrado. O recibo sairá sem data de quitação.';
+        warning.classList.remove('hidden');
+      } else {
+        warning.classList.add('hidden');
+        warning.textContent = '';
+      }
+    }
+
+    function closePreview() {
+      closeModal('modal-preview');
+    }
+
+    function printFromPreview() {
+      if (!previewState.id) return;
+      const mode = previewMode();
+      closePreview();
+      setTimeout(() => printDocument(previewState.id, mode), 150);
+    }
+
+    function sendFromPreview() {
+      if (!previewState.id) return;
+      const isReceipt = previewState.type === 'receipt';
+      closePreview();
+      setTimeout(() => sendWhatsApp(previewState.id, isReceipt), 150);
     }
 
     // =========================================================================
@@ -2000,7 +2166,7 @@
 
     document.addEventListener('keydown', e => {
       if (e.key !== 'Escape') return;
-      ['modal-os-form', 'modal-os-detail', 'modal-client-track', 'modal-client-form', 'modal-backup', 'modal-install']
+      ['modal-os-form', 'modal-os-detail', 'modal-client-track', 'modal-client-form', 'modal-backup', 'modal-install', 'modal-preview']
         .forEach(id => document.getElementById(id)?.classList.add('hidden'));
     });
 
