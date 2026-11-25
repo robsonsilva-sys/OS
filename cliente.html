@@ -91,6 +91,13 @@
     const SUPABASE_URL = 'https://zubrrdburxbdduksfhxr.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_ix-GkEENtRSnuPwAv9OvqQ_4TidAc83';
 
+    const STORE_INFO = {
+      name: 'ROBINHONETCELL',
+      subtitle: 'Assistência Técnica & Loja de Celulares',
+      cnpj: '59.392.635/0001-24',
+      address: 'Rua Presidente Quaresma, 887 — Lagoa Seca'
+    };
+
     const STEPS = ['Aberta', 'Em Manutenção', 'Aguardando Peça', 'Pronta para Retirada', 'Entregue'];
     let live = { active: false, number: '', timer: null };
     let currentOS = null;
@@ -351,8 +358,10 @@
           doc.text(lines, M, y); y += lines.length * size * 0.42 + 3;
         };
 
-        center('ROBINHONETCELL', 19, true);
-        center('Assistência Técnica & Loja de Celulares', 10, false);
+        center(STORE_INFO.name, 19, true);
+        center(STORE_INFO.subtitle, 10, false);
+        center(`CNPJ: ${STORE_INFO.cnpj}`, 8.5, false);
+        center(STORE_INFO.address, 8.5, false);
         center(`RECIBO DE QUITAÇÃO E ENTREGA — ${os.number}`, 11, true);
         center(`Emitido em: ${new Date().toLocaleString('pt-BR')}`, 8.5, false);
         dash();

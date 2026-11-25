@@ -660,6 +660,14 @@
     ];
     const PAYMENT_METHODS = ['PIX', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'Transferência'];
 
+    // Dados oficiais exibidos no recibo/OS impresso e no PDF
+    const STORE_INFO = {
+      name: 'ROBINHONETCELL',
+      subtitle: 'Assistência Técnica & Loja de Celulares',
+      cnpj: '59.392.635/0001-24',
+      address: 'Rua Presidente Quaresma, 887 — Lagoa Seca'
+    };
+
     function readStorage(key) {
       try {
         const parsed = JSON.parse(localStorage.getItem(key) || '[]');
@@ -1790,8 +1798,10 @@
       const emitido = new Date().toLocaleString('pt-BR');
       const pago = o.paidAt ? new Date(o.paidAt).toLocaleString('pt-BR') : emitido;
 
-      center('ROBINHONETCELL', 19, true);
-      center('Assistência Técnica & Loja de Celulares', 10, false);
+      center(STORE_INFO.name, 19, true);
+      center(STORE_INFO.subtitle, 10, false);
+      center(`CNPJ: ${STORE_INFO.cnpj}`, 8.5, false);
+      center(STORE_INFO.address, 8.5, false);
       center(`RECIBO DE QUITAÇÃO E ENTREGA — ${o.number}`, 11, true);
       center(`Emitido em: ${emitido}`, 8.5, false);
       dashed();
@@ -1870,7 +1880,11 @@
         const name = receiptFileName(o);
         const file = new File([blob], name, { type: 'application/pdf' });
         const canAttach = typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] });
-        const text = `*ROBINHONETCELL — RECIBO DE QUITAÇÃO*
+        const text = `*${STORE_INFO.name} — RECIBO DE QUITAÇÃO*
+` +
+          `CNPJ: ${STORE_INFO.cnpj}
+` +
+          `${STORE_INFO.address}
 ` +
           `OS: *${o.number}*
 ` +
@@ -1963,8 +1977,10 @@
       return `
         <div style="${wrapperStyle}">
           <div style="text-align:center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 10px;">
-            <strong style="font-size:${isThermal ? '15px' : '20px'};">ROBINHONETCELL</strong><br/>
-            <span>Assistência Técnica & Loja de Celulares</span><br/>
+            <strong style="font-size:${isThermal ? '15px' : '20px'};">${esc(STORE_INFO.name)}</strong><br/>
+            <span>${esc(STORE_INFO.subtitle)}</span><br/>
+            <span style="font-size:${isThermal ? '9px' : '10px'};">CNPJ: ${esc(STORE_INFO.cnpj)}</span><br/>
+            <span style="font-size:${isThermal ? '9px' : '10px'};">${esc(STORE_INFO.address)}</span><br/>
             <strong>${isReceipt ? 'RECIBO DE QUITAÇÃO E ENTREGA' : 'COMPROVANTE DE ORDEM DE SERVIÇO'} — ${esc(o.number)}</strong><br/>
             <span style="font-size:10px;">Emitido em: ${esc(todayStr)}</span>
           </div>
