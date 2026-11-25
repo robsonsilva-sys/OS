@@ -35,6 +35,12 @@
     .safe-pt { padding-top: max(12px, var(--safe-top)); }
     .safe-pb { padding-bottom: max(10px, var(--safe-bottom)); }
     .pattern-grid { touch-action: none; user-select: none; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: livePulse 1.8s infinite; }
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+      70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
+      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
 
     .preview-paper {
       background: #FFFFFF;
@@ -417,6 +423,11 @@
             </button>
           </div>
         </form>
+
+        <div id="track-live-status" class="hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-800">
+          <span class="live-dot shrink-0"></span>
+          <span id="track-live-text">Acompanhamento em tempo real ativo</span>
+        </div>
 
         <div id="track-result-box"></div>
       </div>
@@ -1614,6 +1625,12 @@
             <button onclick="openTrackForOrder('${o.number}')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold hover:bg-blue-100">
               <i data-lucide="search-check" class="w-4 h-4"></i> Ver Tela do Cliente
             </button>
+            <button onclick="sendTrackingWhatsApp('${o.id}')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700">
+              <i data-lucide="external-link" class="w-4 h-4"></i> Enviar link de acompanhamento
+            </button>
+            <button onclick="copyTrackingLink('${o.id}')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold hover:bg-blue-100">
+              <i data-lucide="copy" class="w-4 h-4"></i> Copiar link
+            </button>
             <button onclick="previewDocument('${o.id}', 'os-a4')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200">
               <i data-lucide="eye" class="w-4 h-4"></i> Visualizar OS (A4)
             </button>
@@ -1717,7 +1734,8 @@
 ` +
           `Prazo: ${o.deadline || 'A combinar'}`;
 
-      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`, '_blank');
+      const finalText = text.includes(trackingLink(o)) ? text : text + `\n\nAcompanhe sua OS em tempo real: ${trackingLink(o)}`;
+      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(finalText)}`, '_blank');
     }
 
     // =========================================================================
@@ -1911,8 +1929,54 @@
     }
 
     // =========================================================================
-    // CONSULTA EM TEMPO REAL DO CLIENTE
+    // CONSULSA DO CLIENTE + ACOMPANHAMENTO EM TEMPO REAL
     // =========================================================================
+    function trackingLink(o) {
+      const base = location.href.split('?')[0].split('#')[0];
+      const pin = digitsOnly(o.clientPhone).slice(-4) || digitsOnly(o.clientCpf).slice(-4);
+      return `${base}?os=${encodeURIComponent(o.number)}&pin=${encodeURIComponent(pin)}`;
+    }
+
+    async function copyTrackingLink(id) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+      const link = trackingLink(o);
+      try {
+        await navigator.clipboard.writeText(link);
+      } catch (e) {
+        const input = document.createElement('textarea');
+        input.value = link;
+        input.style.position = 'fixed';
+        input.style.opacity = '0';
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        input.remove();
+      }
+      alert('Link de acompanhamento copiado!\n\n' + link);
+    }
+
+    function sendTrackingWhatsApp(id) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+      const cleanPhone = o.clientPhone.replace(/\D/g, '');
+      const fullPhone = cleanPhone.length <= 11 ? '55' + cleanPhone : cleanPhone;
+      const text = `*ROBINHONETCELL — ACOMPANHE SUA OS*
+` +
+        `Olá, ${o.clientName.split(' ')[0]}! Sua ordem de serviço *${o.number}* está em acompanhamento em tempo real.
+
+` +
+        `Acesse o link abaixo para ver o andamento do seu aparelho (${o.deviceBrand} ${o.deviceModel}) sem precisar ligar:
+
+` +
+        `${trackingLink(o)}
+
+` +
+        `O status é atualizado automaticamente pela loja.`;
+      const finalText = text.includes(trackingLink(o)) ? text : text + `\n\nAcompanhe sua OS em tempo real: ${trackingLink(o)}`;
+      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(finalText)}`, '_blank');
+    }
+
     function openClientTrackModal() {
       document.getElementById('track-result-box').innerHTML = '';
       document.getElementById('modal-client-track').classList.remove('hidden');
@@ -1928,45 +1992,70 @@
       runClientTracking();
     }
 
-    function runClientTracking(e) {
-      if (e) e.preventDefault();
-      const typed = document.getElementById('track-os-number').value.trim().toUpperCase().replace(/\s+/g, '');
-      const pin = digitsOnly(document.getElementById('track-os-pin').value);
-      const box = document.getElementById('track-result-box');
-
-      const typedDigits = digitsOnly(typed);
-      const typedNumber = typedDigits ? String(parseInt(typedDigits, 10)) : '';
-      const o = orders.find(x => x.number.toUpperCase() === typed) ||
-        (typedNumber && orders.find(x => String(parseInt(digitsOnly(x.number), 10)) === typedNumber));
-
-      if (!o) {
-        box.innerHTML = `<div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-semibold">Ordem de Serviço <strong>${esc(typed)}</strong> não encontrada. Confira o número no seu comprovante.</div>`;
-        return;
+    async function cloudFetchOrderByNumber(number) {
+      try {
+        const sb = await getSupabase();
+        const { data, error } = await sb.from('orders').select('*').eq('number', number).limit(1);
+        if (error) throw error;
+        return data && data[0] ? rowToOrder(data[0]) : null;
+      } catch (e) {
+        console.warn('[acompanhamento]', e.message || e);
+        return null;
       }
+    }
 
-      const phoneDigits = digitsOnly(o.clientPhone);
-      const cpfDigits = digitsOnly(o.clientCpf);
+    async function findOrderForTracking(typed) {
+      const upper = typed.toUpperCase();
+      const local = orders.find(x => x.number.toUpperCase() === upper) ||
+        (typedDigitsMatch(orders, typed));
+      if (local) return local;
 
-      if (pin.length !== 4) {
-        box.innerHTML = `<div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-semibold">Informe os <strong>4 últimos dígitos</strong> do telefone ou CPF cadastrado nesta OS.</div>`;
-        return;
+      const fromCloud = await cloudFetchOrderByNumber(upper);
+      if (fromCloud) return fromCloud;
+
+      const digits = digitsOnly(typed);
+      if (digits) {
+        return await cloudFetchOrderByNumber('OS-' + String(parseInt(digits, 10)).padStart(4, '0'));
       }
+      return null;
+    }
 
-      if (!phoneDigits.endsWith(pin) && !cpfDigits.endsWith(pin)) {
-        box.innerHTML = `<div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-semibold">Os 4 últimos dígitos informados não conferem com o cadastro desta OS.</div>`;
-        return;
-      }
+    function typedDigitsMatch(list, typed) {
+      const digits = digitsOnly(typed);
+      if (!digits) return null;
+      const n = String(parseInt(digits, 10));
+      return list.find(x => String(parseInt(digitsOnly(x.number), 10)) === n) || null;
+    }
 
+    let trackingLive = { active: false, number: '', timer: null };
+
+    function setLiveText(text, offline = false) {
+      const el = document.getElementById('track-live-status');
+      const label = document.getElementById('track-live-text');
+      if (!el || !label) return;
+      label.textContent = text;
+      el.classList.toggle('bg-emerald-50', !offline);
+      el.classList.toggle('border-emerald-200', !offline);
+      el.classList.toggle('text-emerald-800', !offline);
+      el.classList.toggle('bg-amber-50', offline);
+      el.classList.toggle('border-amber-200', offline);
+      el.classList.toggle('text-amber-800', offline);
+      const dot = el.querySelector('.live-dot');
+      if (dot) dot.style.background = offline ? '#D97706' : '#10B981';
+    }
+
+    function renderTrackingCard(o) {
       const steps = ['Aberta', 'Em Manutenção', 'Aguardando Peça', 'Pronta para Retirada', 'Entregue'];
       const currentIdx = steps.indexOf(o.status);
+      const lastSync = new Date().toLocaleTimeString('pt-BR');
 
-      box.innerHTML = `
+      document.getElementById('track-result-box').innerHTML = `
         <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-4">
           <div class="flex items-center justify-between">
             <div>
               <span class="text-xs font-mono font-bold text-slate-500">${esc(o.number)}</span>
               <h4 class="font-bold text-slate-900 text-base">${esc(o.deviceBrand)} ${esc(o.deviceModel)}</h4>
-              <p class="text-xs text-slate-500">Cliente: ${esc(o.clientName.split(' ')[0] || '')}***</p>
+              <p class="text-xs text-slate-500">Cliente: ${esc((o.clientName || '').split(' ')[0] || '')}***</p>
             </div>
             ${statusBadge(o.status)}
           </div>
@@ -1993,8 +2082,96 @@
               <span>${formatBRL(o.price)}</span>
             </div>
           </div>
+
+          <p class="text-[10px] text-slate-400 text-center">Sincronizado automaticamente às ${esc(lastSync)}</p>
         </div>
       `;
+    }
+
+    async function refreshTrackingLive() {
+      if (!trackingLive.active) return;
+      const remote = await cloudFetchOrderByNumber(trackingLive.number);
+      if (!remote) {
+        setLiveText('Sem conexão no momento — tentando novamente em instantes...', true);
+        return;
+      }
+      renderTrackingCard(remote);
+      setLiveText(`Ao vivo — atualizado às ${new Date().toLocaleTimeString('pt-BR')}`);
+
+      const idx = orders.findIndex(x => x.id === remote.id);
+      if (idx >= 0) orders[idx] = { ...orders[idx], ...remote };
+    }
+
+    function onTrackingVisibility() {
+      if (!document.hidden && trackingLive.active) refreshTrackingLive();
+    }
+
+    function startTrackingLive(number) {
+      stopTrackingLive();
+      trackingLive.active = true;
+      trackingLive.number = number;
+      document.getElementById('track-live-status').classList.remove('hidden');
+      setLiveText('Acompanhamento em tempo real ativo — atualizando...');
+      trackingLive.timer = setInterval(refreshTrackingLive, 10000);
+      document.addEventListener('visibilitychange', onTrackingVisibility);
+    }
+
+    function stopTrackingLive() {
+      if (trackingLive.timer) clearInterval(trackingLive.timer);
+      trackingLive.timer = null;
+      trackingLive.active = false;
+      trackingLive.number = '';
+      document.removeEventListener('visibilitychange', onTrackingVisibility);
+      const el = document.getElementById('track-live-status');
+      if (el) el.classList.add('hidden');
+    }
+
+    async function runClientTracking(e) {
+      if (e) e.preventDefault();
+      const typed = document.getElementById('track-os-number').value.trim().toUpperCase().replace(/\s+/g, '');
+      const pin = digitsOnly(document.getElementById('track-os-pin').value);
+      const box = document.getElementById('track-result-box');
+
+      const showError = (msg) => {
+        box.innerHTML = `<div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-semibold">${msg}</div>`;
+        stopTrackingLive();
+      };
+
+      if (!typed) {
+        showError('Informe o número da OS.');
+        return;
+      }
+      if (pin.length !== 4) {
+        showError('Informe os <strong>4 últimos dígitos</strong> do telefone ou CPF cadastrado nesta OS.');
+        return;
+      }
+
+      const o = await findOrderForTracking(typed);
+      if (!o) {
+        showError(`Ordem de Serviço <strong>${esc(typed)}</strong> não encontrada. Confira o número no seu comprovante.`);
+        return;
+      }
+
+      const phoneDigits = digitsOnly(o.clientPhone);
+      const cpfDigits = digitsOnly(o.clientCpf);
+      if (!phoneDigits.endsWith(pin) && !cpfDigits.endsWith(pin)) {
+        showError('Os 4 últimos dígitos informados não conferem com o cadastro desta OS.');
+        return;
+      }
+
+      renderTrackingCard(o);
+      startTrackingLive(o.number);
+    }
+
+    function openTrackingFromURL() {
+      const params = new URLSearchParams(location.search);
+      const osNumber = params.get('os');
+      const pin = params.get('pin');
+      if (!osNumber || !pin) return;
+      document.getElementById('track-os-number').value = osNumber;
+      document.getElementById('track-os-pin').value = pin;
+      openClientTrackModal();
+      runClientTracking();
     }
 
     // =========================================================================
@@ -2093,7 +2270,10 @@
       cloudTest(true);
     }
     function openInstallModal() { document.getElementById('modal-install').classList.remove('hidden'); }
-    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      if (id === 'modal-client-track') stopTrackingLive();
+    }
 
     function exportAppHTML() {
       const html = PRISTINE_HTML;
@@ -2168,6 +2348,7 @@
       if (e.key !== 'Escape') return;
       ['modal-os-form', 'modal-os-detail', 'modal-client-track', 'modal-client-form', 'modal-backup', 'modal-install', 'modal-preview']
         .forEach(id => document.getElementById(id)?.classList.add('hidden'));
+      stopTrackingLive();
     });
 
     initPWAAssets();
@@ -2175,7 +2356,11 @@
     switchTab('dashboard');
 
     // Sincroniza com a nuvem ao abrir (mescla os dados, nunca apaga)
-    setTimeout(() => { cloudPullAll(true); }, 1200);
+    setTimeout(async () => {
+      await cloudPullAll(true);
+      // Link enviado por WhatsApp abre a consulta já preenchida e ao vivo
+      openTrackingFromURL();
+    }, 1200);
   </script>
 </body>
 </html>
