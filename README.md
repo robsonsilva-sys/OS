@@ -9,7 +9,7 @@ Aplicativo de arquivo único (`index.html`), sem servidor e sem instalação: os
 - **Dashboard & KPIs:** OS Abertas, Em Manutenção, Aguardando Peça, Prontas para Retirada e Faturamento do Mês.
 - **Cadastro de OS em 1 Clique:** Seleção rápida de marca (Apple, Samsung, Motorola, Xiaomi, Realme, ASUS, LG), catálogo clicável de modelos, cores, checklist de entrada e desenho de padrão Android 3x3.
 - **Consulta em Tempo Real do Cliente:** Acompanhamento visual por etapas com número da OS e validação pelos **4 últimos dígitos** do telefone/CPF (o número pode ser digitado como `OS-0001`, `0001` ou `1`).
-- **Link de acompanhamento pelo WhatsApp:** a loja envia um link que abre a consulta já preenchida e validada; a tela atualiza o status **automaticamente a cada 10 segundos** (e ao voltar para a aba), sem precisar recarregar. Também há botão para copiar o link.
+- **Link de acompanhamento pelo WhatsApp:** a loja envia um link que abre a tela exclusiva do cliente (`cliente.html`), já preenchida e validada, com o status **atualizado automaticamente a cada 10 segundos** (e ao voltar para a aba). Essa página não tem nenhum botão de editar, criar ou excluir OS — apenas consulta.
 - **Recibo de Quitação & Impressão:** Emissão de recibo pós-execução com forma de pagamento, garantia legal de 90 dias (CDC), envio formatado no WhatsApp e impressão em **Folha A4 / PDF** ou **Cupom Térmico 80mm**.
 - **Pré-visualização antes de imprimir/enviar:** o recibo e a OS abrem em uma tela de conferência com alternância entre **Recibo/OS** e **A4/Cupom 80mm**, aviso quando o pagamento ainda não foi registrado e botões de imprimir, salvar em PDF e enviar no WhatsApp.
 - **Clientes & Histórico:** Cadastro de clientes com histórico de todas as OS do aparelho/telefone.
@@ -48,12 +48,14 @@ O schema cria numeração automática de OS, índices e políticas de acesso, e 
 No detalhe da OS, use **Enviar link de acompanhamento** (abre o WhatsApp com a mensagem pronta) ou **Copiar link**. O link tem este formato:
 
 ```
-https://robsonsilva-sys.github.io/OS/?os=OS-0001&pin=1234
+https://robsonsilva-sys.github.io/OS/cliente.html?os=OS-0001&pin=1234
 ```
 
-Ao abrir, a tela do cliente já consulta a OS com os 4 últimos dígitos e fica **ao vivo**: busca o status no Supabase a cada 10 segundos e também quando a aba volta ao foco. Assim, quando a loja mudar o status para *Em Manutenção*, *Pronta para Retirada* etc., a tela do cliente atualiza sozinha.
+Ao abrir, a página **[`cliente.html`](cliente.html)** consulta a OS com os 4 últimos dígitos e fica **ao vivo**: busca o status no Supabase a cada 10 segundos e também quando a aba volta ao foco. Assim, quando a loja mudar o status para *Em Manutenção*, *Pronta para Retirada* etc., a tela do cliente atualiza sozinha.
 
-> O link só funciona enquanto o site estiver publicado e o banco acessível. O PIN é apenas os 4 últimos dígitos do telefone/CPF já usados na consulta — não compartilhe o link com terceiros.
+Essa página é **somente de acompanhamento**: não exibe menu de gestão, não tem botões de criar/editar/excluir OS e não dá acesso ao aplicativo da loja (`index.html`). O painel continua disponível apenas em `index.html`.
+
+> O link só funciona enquanto o site estiver publicado e o banco acessível. O PIN é apenas os 4 últimos dígitos do telefone/CPF já usados no atendimento — não compartilhe o link com terceiros.
 
 ## Manter o banco ativo (a cada 2 dias)
 

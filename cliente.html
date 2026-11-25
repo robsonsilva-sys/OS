@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#047857" />
+  <meta name="description" content="Acompanhe em tempo real o andamento da sua ordem de serviço na RobinhoNetCell." />
+  <title>Acompanhe sua OS | RobinhoNetCell</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background: #F0FDF6; color: #0F172A; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #10B981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: livePulse 1.8s infinite; }
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+      70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); }
+      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
+    .fade-in { animation: fadeIn .25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <header class="bg-emerald-700 text-white px-5 py-4 shadow-lg">
+    <div class="max-w-xl mx-auto flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-white/15 border border-white/25 flex items-center justify-center font-extrabold text-sm shrink-0">RNC</div>
+      <div class="min-w-0">
+        <h1 class="font-extrabold text-base leading-tight truncate">RobinhoNetCell</h1>
+        <p class="text-[11px] text-emerald-100">Assistência Técnica & Loja de Celulares</p>
+      </div>
+      <span class="ml-auto hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-[10px] font-bold">
+        <i data-lucide="refresh-cw" class="w-3 h-3"></i> AO VIVO
+      </span>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-xl mx-auto px-4 py-6 space-y-4">
+
+    <section class="bg-white rounded-2xl shadow-sm border border-emerald-100 p-5">
+      <div class="flex items-center gap-2.5 mb-1">
+        <i data-lucide="search-check" class="w-5 h-5 text-emerald-700"></i>
+        <h2 class="font-bold text-slate-900">Acompanhe sua Ordem de Serviço</h2>
+      </div>
+      <p class="text-xs text-slate-500 mb-4">Informe o número da OS e os 4 últimos dígitos do telefone ou CPF usados no atendimento.</p>
+
+      <form id="track-form" onsubmit="consultar(event)" class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-end">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Número da OS</label>
+            <input id="os" required type="text" placeholder="OS-0001" autocomplete="off"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-bold uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">4 últimos dígitos</label>
+            <input id="pin" required type="text" inputmode="numeric" maxlength="4" placeholder="1234" autocomplete="off"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          </div>
+        </div>
+        <button type="submit" class="py-2.5 px-5 rounded-xl bg-emerald-700 text-white text-sm font-bold hover:bg-emerald-800 whitespace-nowrap">
+          Consultar
+        </button>
+      </form>
+    </section>
+
+    <div id="live-status" class="hidden items-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-800">
+      <span class="live-dot shrink-0"></span>
+      <span id="live-text">Atualizando automaticamente...</span>
+      <button onclick="atualizarAgora()" class="ml-auto underline underline-offset-2">Atualizar agora</button>
+    </div>
+
+    <div id="resultado"></div>
+
+    <p class="text-center text-[10px] text-slate-400 leading-relaxed pt-2">
+      Página somente de acompanhamento. Nenhuma alteração na ordem de serviço pode ser feita por aqui.<br />
+      Em caso de dúvidas, fale com a loja pelo telefone informado no seu comprovante.
+    </p>
+  </main>
+
+  <footer class="py-4 text-center text-[10px] text-slate-400 border-t border-emerald-100 bg-white/60">
+    RobinhoNetCell — Acompanhamento de Ordem de Serviço
+  </footer>
+
+  <script>
+    // Configuração (chave pública de leitura — a mesma usada pelo site da loja)
+    const SUPABASE_URL = 'https://zubrrdburxbdduksfhxr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_ix-GkEENtRSnuPwAv9OvqQ_4TidAc83';
+
+    const STEPS = ['Aberta', 'Em Manutenção', 'Aguardando Peça', 'Pronta para Retirada', 'Entregue'];
+    let live = { active: false, number: '', timer: null };
+
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    const digits = (v) => String(v ?? '').replace(/\D/g, '');
+    const money = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    async function buscarOS(numero) {
+      const headers = { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY };
+      const consultarNumero = async (n) => {
+        const url = `${SUPABASE_URL}/rest/v1/orders?select=number,status,client_name,client_phone,client_cpf,device_brand,device_model,defect,report,price,deadline,created_at&number=eq.${encodeURIComponent(n)}&limit=1`;
+        const r = await fetch(url, { headers });
+        if (!r.ok) throw new Error('Não foi possível consultar o banco (HTTP ' + r.status + ').');
+        const rows = await r.json();
+        return rows[0] || null;
+      };
+
+      const upper = String(numero).trim().toUpperCase().replace(/\s+/g, '');
+      let os = await consultarNumero(upper);
+      if (!os && /^\d+$/.test(digits(upper))) {
+        os = await consultarNumero('OS-' + String(parseInt(digits(upper), 10)).padStart(4, '0'));
+      }
+      return os;
+    }
+
+    function statusCor(status) {
+      if (status === 'Entregue') return 'bg-emerald-100 text-emerald-800';
+      if (status === 'Pronta para Retirada') return 'bg-blue-100 text-blue-800';
+      if (status === 'Aguardando Peça') return 'bg-amber-100 text-amber-800';
+      return 'bg-slate-100 text-slate-700';
+    }
+
+    function renderizar(os) {
+      const idx = STEPS.indexOf(os.status);
+      const agora = new Date().toLocaleTimeString('pt-BR');
+      document.getElementById('resultado').innerHTML = `
+        <section class="fade-in bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="px-5 py-4 bg-slate-50 border-b border-slate-100 flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <span class="text-[11px] font-mono font-bold text-slate-500">${esc(os.number)}</span>
+              <h3 class="font-extrabold text-slate-900 truncate">${esc(os.device_brand)} ${esc(os.device_model)}</h3>
+              <p class="text-[11px] text-slate-500">Cliente: ${esc((os.client_name || '').split(' ')[0] || '')}***</p>
+            </div>
+            <span class="shrink-0 px-2.5 py-1 rounded-full text-[10px] font-bold ${statusCor(os.status)}">${esc(os.status)}</span>
+          </div>
+
+          <div class="p-5 space-y-4">
+            <div>
+              <p class="text-[11px] font-bold text-slate-500 mb-2.5">ANDAMENTO DO SERVIÇO</p>
+              <div class="space-y-2.5">
+                ${STEPS.map((s, i) => {
+                  const ok = i <= idx;
+                  return `<div class="flex items-center gap-2.5 text-xs ${ok ? 'text-slate-900 font-bold' : 'text-slate-400'}">
+                    <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ${ok ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'}">${ok ? '✓' : i + 1}</span>
+                    <span>${s}</span>
+                    ${i === idx ? '<span class="ml-auto text-[9px] font-bold text-emerald-700">ATUAL</span>' : ''}
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>
+
+            <div class="rounded-xl bg-slate-50 border border-slate-100 p-3.5 text-xs space-y-1.5">
+              <div><strong class="text-slate-600">Defeito informado:</strong> ${esc(os.defect || '—')}</div>
+              <div><strong class="text-slate-600">Laudo / Serviço:</strong> ${esc(os.report || 'Em avaliação técnica')}</div>
+              <div class="pt-1.5 border-t border-slate-200 flex justify-between items-center">
+                <span class="font-bold text-slate-600">Valor do serviço</span>
+                <span class="font-extrabold text-base text-emerald-700">${money(os.price)}</span>
+              </div>
+            </div>
+
+            <p class="text-center text-[10px] text-slate-400">Sincronizado automaticamente às ${esc(agora)}</p>
+          </div>
+        </section>
+      `;
+    }
+
+    function erro(mensagem) {
+      pararLive();
+      document.getElementById('resultado').innerHTML = `
+        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-900">
+          ${mensagem}
+        </div>`;
+    }
+
+    function setLiveText(texto, off = false) {
+      const box = document.getElementById('live-status');
+      box.classList.remove('hidden');
+      box.classList.toggle('bg-emerald-50', !off);
+      box.classList.toggle('border-emerald-200', !off);
+      box.classList.toggle('text-emerald-800', !off);
+      box.classList.toggle('bg-amber-50', off);
+      box.classList.toggle('border-amber-200', off);
+      box.classList.toggle('text-amber-800', off);
+      document.getElementById('live-text').textContent = texto;
+      const dot = box.querySelector('.live-dot');
+      if (dot) dot.style.background = off ? '#D97706' : '#10B981';
+    }
+
+    async function atualizarAgora(silent = false) {
+      if (!live.active) return;
+      try {
+        const os = await buscarOS(live.number);
+        if (!os) throw new Error('OS não encontrada.');
+        renderizar(os);
+        setLiveText('Ao vivo — atualizado às ' + new Date().toLocaleTimeString('pt-BR'));
+      } catch (e) {
+        if (!silent) setLiveText('Sem conexão. Tentando novamente em instantes...', true);
+      }
+    }
+
+    function aoVoltar() {
+      if (!document.hidden && live.active) atualizarAgora(true);
+    }
+
+    function pararLive() {
+      if (live.timer) clearInterval(live.timer);
+      live.timer = null;
+      live.active = false;
+      live.number = '';
+      document.removeEventListener('visibilitychange', aoVoltar);
+      document.getElementById('live-status').classList.add('hidden');
+    }
+
+    function iniciarLive(numero) {
+      pararLive();
+      live.active = true;
+      live.number = numero;
+      setLiveText('Acompanhamento em tempo real ativo');
+      live.timer = setInterval(() => atualizarAgora(true), 10000);
+      document.addEventListener('visibilitychange', aoVoltar);
+    }
+
+    async function consultar(e) {
+      if (e) e.preventDefault();
+      const numero = document.getElementById('os').value.trim().toUpperCase();
+      const pin = digits(document.getElementById('pin').value);
+
+      if (!numero) { erro('Informe o número da OS.'); return; }
+      if (pin.length !== 4) { erro('Informe os <strong>4 últimos dígitos</strong> do telefone ou CPF.'); return; }
+
+      try {
+        const os = await buscarOS(numero);
+        if (!os) { erro('Ordem de Serviço <strong>' + esc(numero) + '</strong> não encontrada. Confira o número no seu comprovante.'); return; }
+        if (!digits(os.client_phone).endsWith(pin) && !digits(os.client_cpf).endsWith(pin)) {
+          erro('Os 4 últimos dígitos não conferem com o cadastro desta OS.');
+          return;
+        }
+        document.getElementById('os').value = os.number;
+        renderizar(os);
+        iniciarLive(os.number);
+      } catch (err) {
+        erro('Não foi possível consultar agora. ' + esc(err.message || err));
+      }
+    }
+
+    // Link enviado pela loja: já abre com os dados preenchidos
+    (function init() {
+      const p = new URLSearchParams(location.search);
+      const os = p.get('os');
+      const pin = p.get('pin');
+      if (os) document.getElementById('os').value = os;
+      if (pin) document.getElementById('pin').value = pin;
+      if (os && pin) consultar();
+      if (window.lucide) lucide.createIcons();
+    })();
+  </script>
+</body>
+</html>

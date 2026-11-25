@@ -1932,7 +1932,8 @@
     // CONSULSA DO CLIENTE + ACOMPANHAMENTO EM TEMPO REAL
     // =========================================================================
     function trackingLink(o) {
-      const base = location.href.split('?')[0].split('#')[0];
+      // Página exclusiva do cliente: só consulta, sem acesso ao painel da loja
+      const base = new URL('cliente.html', location.href).href.split('?')[0].split('#')[0];
       const pin = digitsOnly(o.clientPhone).slice(-4) || digitsOnly(o.clientCpf).slice(-4);
       return `${base}?os=${encodeURIComponent(o.number)}&pin=${encodeURIComponent(pin)}`;
     }
