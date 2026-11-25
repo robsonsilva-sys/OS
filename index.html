@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>RobinhoNetCell — Gestão de Ordem de Serviço</title>
+
+  <!-- PWA / iOS App Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="RobinhoNetCell" />
+  <meta name="theme-color" content="#2563EB" />
+  <link id="apple-touch-icon" rel="apple-touch-icon" />
+  <link id="pwa-manifest" rel="manifest" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #F8FAFC;
+      color: #0F172A;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .safe-pt { padding-top: max(12px, var(--safe-top)); }
+    .safe-pb { padding-bottom: max(10px, var(--safe-bottom)); }
+    .pattern-grid { touch-action: none; user-select: none; }
+
+    /* Estilos de Impressão (A4 e 80mm) */
+    @media print {
+      body * { visibility: hidden !important; }
+      #print-area, #print-area * { visibility: visible !important; }
+      #print-area {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row">
+
+  <!-- MENU LATERAL DESKTOP -->
+  <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200 z-30">
+    <div class="p-6 border-b border-slate-100 flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-lg shadow-sm">
+        RNC
+      </div>
+      <div>
+        <h1 class="font-bold text-slate-900 leading-tight">RobinhoNetCell</h1>
+        <span class="text-xs text-slate-500 font-medium">Gestão de Assistência</span>
+      </div>
+    </div>
+
+    <nav class="flex-1 p-4 space-y-1.5">
+      <button onclick="switchTab('dashboard')" data-nav="dashboard" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+        Dashboard & OS
+      </button>
+      <button onclick="openNewOSModal()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition">
+        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+        Nova Ordem de Serviço
+      </button>
+      <button onclick="switchTab('clients')" data-nav="clients" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition">
+        <i data-lucide="users" class="w-4 h-4"></i>
+        Clientes & Histórico
+      </button>
+      <button onclick="openClientTrackModal()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition">
+        <i data-lucide="search-check" class="w-4 h-4 text-emerald-600"></i>
+        Consulta do Cliente
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-slate-100 space-y-2">
+      <button onclick="openBackupModal()" class="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">
+        <i data-lucide="download" class="w-4 h-4 text-blue-600"></i>
+        Exportar App / Backup
+      </button>
+      <button onclick="openInstallModal()" class="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+        <i data-lucide="smartphone" class="w-4 h-4 text-blue-600"></i>
+        Instalar no iPhone
+      </button>
+    </div>
+  </aside>
+
+  <!-- CABEÇALHO MOBILE -->
+  <header class="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200 px-4 pb-3 safe-pt flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-sm">
+        RNC
+      </div>
+      <div>
+        <h1 class="font-bold text-slate-900 text-base leading-tight">RobinhoNetCell</h1>
+        <p class="text-[11px] text-slate-500">Ordem de Serviço & Recibos</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-1.5">
+      <button onclick="openClientTrackModal()" title="Consulta do Cliente" class="p-2 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
+        <i data-lucide="search-check" class="w-5 h-5"></i>
+      </button>
+      <button onclick="openBackupModal()" title="Exportar / Backup" class="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200">
+        <i data-lucide="download" class="w-5 h-5"></i>
+      </button>
+      <button onclick="openInstallModal()" title="Instalar no iPhone" class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100">
+        <i data-lucide="smartphone" class="w-5 h-5"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="flex-1 md:pl-64 pb-24 md:pb-10">
+    <div class="max-w-6xl mx-auto p-4 md:p-8">
+
+      <!-- VIEW: DASHBOARD -->
+      <section id="view-dashboard" class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900">Painel de Ordens de Serviço</h2>
+            <p class="text-sm text-slate-500">Acompanhe os reparos, status, recibos e faturamento da RobinhoNetCell.</p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="openClientTrackModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 shadow-sm transition">
+              <i data-lucide="search-check" class="w-4 h-4"></i>
+              Consulta do Cliente
+            </button>
+            <button onclick="openNewOSModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm transition">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              Nova OS
+            </button>
+          </div>
+        </div>
+
+        <!-- CARDS DE RESUMO -->
+        <div id="kpi-cards" class="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4"></div>
+
+        <!-- BUSCA E FILTROS -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input
+              id="os-search"
+              type="text"
+              oninput="renderOSList()"
+              placeholder="Buscar por cliente, número da OS, modelo ou IMEI..."
+              class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div id="status-filters" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <!-- LISTA DE OS -->
+        <div id="os-list" class="space-y-3"></div>
+      </section>
+
+      <!-- VIEW: CLIENTES -->
+      <section id="view-clients" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-900">Clientes & Histórico</h2>
+            <p class="text-sm text-slate-500">Base de clientes cadastrados e aparelhos já atendidos na loja.</p>
+          </div>
+          <button onclick="openNewClientModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm transition">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            Novo Cliente
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input
+              id="client-search"
+              type="text"
+              oninput="renderClientsList()"
+              placeholder="Buscar cliente por nome, WhatsApp ou CPF..."
+              class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        <div id="clients-list" class="space-y-3"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- NAVEGAÇÃO INFERIOR MOBILE -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 z-30 px-2 pt-2 safe-pb flex justify-around items-center">
+    <button onclick="switchTab('dashboard')" data-nav="dashboard" class="nav-btn flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold">
+      <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+      <span>Ordens</span>
+    </button>
+    <button onclick="openNewOSModal()" class="flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-sm">
+      <i data-lucide="plus" class="w-5 h-5"></i>
+      <span>Nova OS</span>
+    </button>
+    <button onclick="switchTab('clients')" data-nav="clients" class="nav-btn flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold">
+      <i data-lucide="users" class="w-5 h-5"></i>
+      <span>Clientes</span>
+    </button>
+  </nav>
+
+  <!-- MODAL: CADASTRO / EDIÇÃO DE OS -->
+  <div id="modal-os-form" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-4">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <h3 id="modal-os-title" class="font-bold text-lg text-slate-900">Nova Ordem de Serviço</h3>
+        <button onclick="closeModal('modal-os-form')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="os-form" onsubmit="saveOS(event)" class="p-6 space-y-6">
+        <input type="hidden" id="os-id" />
+
+        <!-- 1. DADOS DO CLIENTE -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-bold uppercase tracking-wider text-blue-600">1. Dados do Cliente</h4>
+            <select id="os-client-select" onchange="fillClientFromSelect()" class="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-slate-50 text-slate-700">
+              <option value="">Selecionar cliente cadastrado...</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nome Completo *</label>
+              <input id="os-client-name" required type="text" placeholder="Ex: João da Silva" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone / WhatsApp *</label>
+              <input id="os-client-phone" required type="text" placeholder="(84) 99999-0000" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">CPF (Opcional)</label>
+              <input id="os-client-cpf" type="text" placeholder="000.000.000-00" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. DADOS DO APARELHO (SELEÇÃO RÁPIDA) -->
+        <div class="space-y-3 border-t border-slate-100 pt-5">
+          <h4 class="text-sm font-bold uppercase tracking-wider text-blue-600">2. Aparelho (Seleção em 1 Clique)</h4>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Marca *</label>
+            <div id="brand-buttons" class="flex flex-wrap gap-2"></div>
+            <input type="hidden" id="os-device-brand" required />
+          </div>
+
+          <div id="model-catalog-wrapper" class="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2.5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span id="model-catalog-label" class="text-xs font-semibold text-slate-700">Selecione uma marca acima para ver os modelos:</span>
+              <input id="model-quick-filter" type="text" oninput="renderModelButtons()" placeholder="Filtrar modelo..." class="hidden px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs w-full sm:w-48" />
+            </div>
+            <div id="model-buttons" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto"></div>
+            <div id="custom-model-box" class="hidden pt-1">
+              <input id="os-device-model" required type="text" placeholder="Digite ou confirme o modelo do aparelho" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-sm font-medium" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Cor do Aparelho</label>
+            <div id="color-buttons" class="flex flex-wrap gap-1.5 mb-2"></div>
+            <input id="os-device-color" type="text" placeholder="Cor selecionada ou personalizada" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">IMEI / Número de Série</label>
+                <input id="os-device-imei" type="text" placeholder="Ex: 356938104928172" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Senha / PIN de Desbloqueio</label>
+                <input id="os-device-pass" type="text" placeholder="Ex: 123456 ou Sem senha" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+              </div>
+            </div>
+
+            <!-- PADRÃO ANDROID INTERATIVO -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col items-center">
+              <div class="w-full flex items-center justify-between mb-1">
+                <span class="text-xs font-semibold text-slate-700">Desenhar Padrão Android</span>
+                <button type="button" onclick="clearPattern()" class="text-[11px] font-semibold text-rose-600 hover:underline">Limpar</button>
+              </div>
+              <svg id="pattern-svg" viewBox="0 0 180 180" class="w-36 h-36 pattern-grid bg-white rounded-xl border border-slate-200 cursor-pointer">
+                <g id="pattern-lines"></g>
+                <g id="pattern-dots"></g>
+              </svg>
+              <span id="pattern-text" class="text-[11px] text-slate-500 mt-1.5 font-mono">Sequência: Nenhuma</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. CHECKLIST DE ENTRADA -->
+        <div class="space-y-2 border-t border-slate-100 pt-5">
+          <h4 class="text-sm font-bold uppercase tracking-wider text-blue-600">3. Checklist de Entrada</h4>
+          <div id="checklist-buttons" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- 4. RELATO, ORÇAMENTO E STATUS -->
+        <div class="space-y-3 border-t border-slate-100 pt-5">
+          <h4 class="text-sm font-bold uppercase tracking-wider text-blue-600">4. Relato Técnico, Orçamento & Status</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Defeito Relatado pelo Cliente *</label>
+              <textarea id="os-defect" required rows="2" placeholder="Ex: Aparelho caiu e não dá imagem..." class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Laudo Técnico / Serviço Executado</label>
+              <textarea id="os-report" rows="2" placeholder="Ex: Substituição do módulo frontal OLED..." class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm"></textarea>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Peças Utilizadas</label>
+              <input id="os-parts" type="text" placeholder="Ex: Tela Incell + Película" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Valor do Serviço (R$)</label>
+              <input id="os-price" type="number" step="0.01" min="0" placeholder="0,00" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Prazo de Entrega</label>
+              <input id="os-deadline" type="text" placeholder="Ex: Hoje às 17h" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Status da OS</label>
+              <select id="os-status" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white font-semibold">
+                <option value="Aberta">OS Aberta</option>
+                <option value="Em Manutenção">Em Manutenção</option>
+                <option value="Aguardando Peça">Aguardando Peça</option>
+                <option value="Pronta para Retirada">Pronta para Retirada</option>
+                <option value="Entregue">Entregue</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('modal-os-form')" class="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+            Cancelar
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 shadow-sm">
+            Salvar Ordem de Serviço
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: DETALHES DA OS, RECIBO & WHATSAPP -->
+  <div id="modal-os-detail" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+    <div id="os-detail-content" class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-4"></div>
+  </div>
+
+  <!-- MODAL: CONSULTA EM TEMPO REAL DO CLIENTE -->
+  <div id="modal-client-track" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+    <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-6">
+      <div class="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <i data-lucide="search-check" class="w-5 h-5"></i>
+          <div>
+            <h3 class="font-bold text-base leading-tight">Acompanhar Ordem de Serviço</h3>
+            <p class="text-xs text-emerald-100">Consulta do Cliente — RobinhoNetCell</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-client-track')" class="p-1.5 rounded-lg text-emerald-100 hover:bg-emerald-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <form onsubmit="runClientTracking(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Número da OS *</label>
+            <input id="track-os-number" required type="text" placeholder="Ex: OS-0001" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm uppercase font-semibold" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">4 últimos dígitos Tel/CPF</label>
+            <input id="track-os-pin" maxlength="4" type="text" placeholder="Ex: 8899" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full py-2 px-4 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
+              Consultar Agora
+            </button>
+          </div>
+        </form>
+
+        <div id="track-result-box"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO CLIENTE -->
+  <div id="modal-client-form" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-8">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <h3 class="font-bold text-lg text-slate-900">Cadastrar Cliente</h3>
+        <button onclick="closeModal('modal-client-form')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form onsubmit="saveNewClient(event)" class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Nome Completo *</label>
+          <input id="cli-name" required type="text" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Telefone / WhatsApp *</label>
+          <input id="cli-phone" required type="text" placeholder="(84) 99999-0000" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">CPF</label>
+          <input id="cli-cpf" type="text" placeholder="000.000.000-00" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('modal-client-form')" class="px-4 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600">Cancelar</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">Salvar Cliente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EXPORTAR & BACKUP -->
+  <div id="modal-backup" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+    <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-8">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <h3 class="font-bold text-lg text-slate-900">Exportar App & Backup</h3>
+        <button onclick="closeModal('modal-backup')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="p-4 rounded-xl bg-blue-50 border border-blue-100 space-y-2">
+          <h4 class="font-bold text-sm text-blue-900">1. Baixar Código do Aplicativo (index.html)</h4>
+          <p class="text-xs text-blue-800">Baixe o arquivo completo pronto para publicar no GitHub Pages, Vercel ou Netlify e instalar no iPhone.</p>
+          <button onclick="exportAppHTML()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">
+            <i data-lucide="file-code" class="w-4 h-4"></i>
+            Baixar index.html
+          </button>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <h4 class="font-bold text-sm text-slate-900">2. Backup dos Clientes e Ordens de Serviço (.json)</h4>
+          <p class="text-xs text-slate-600">Salve uma cópia de segurança dos seus registros ou restaure em outro aparelho.</p>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button onclick="exportDataJSON()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              Exportar Dados (.json)
+            </button>
+            <label class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-100 cursor-pointer">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              Importar Backup (.json)
+              <input type="file" accept=".json" onchange="importDataJSON(event)" class="hidden" />
+            </label>
+          </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-100 flex justify-between items-center">
+          <span class="text-xs text-slate-400">Banco de dados local do navegador</span>
+          <button onclick="resetDatabase()" class="text-xs font-semibold text-rose-600 hover:underline">
+            Zerar Banco de Dados
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: INSTALAR NO IPHONE -->
+  <div id="modal-install" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+    <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-8">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+        <h3 class="font-bold text-lg text-slate-900">Instalar no iPhone (iOS)</h3>
+        <button onclick="closeModal('modal-install')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4 text-sm text-slate-700">
+        <p>Transforme o <strong>RobinhoNetCell</strong> em um aplicativo na tela inicial do seu iPhone:</p>
+        <ol class="list-decimal pl-5 space-y-2 text-xs leading-relaxed">
+          <li>Abra o link do sistema no navegador <strong>Safari</strong> do iPhone.</li>
+          <li>Toque no ícone de <strong>Compartilhar</strong> (quadrado com seta para cima na barra inferior).</li>
+          <li>Role para baixo e toque em <strong>Adicionar à Tela de Início</strong>.</li>
+          <li>Confirme o nome <strong>RobinhoNetCell</strong> e toque em <strong>Adicionar</strong>.</li>
+        </ol>
+        <div class="p-3 rounded-xl bg-blue-50 text-blue-800 text-xs">
+          O app abrirá em tela cheia, sem barra de navegador, com ícone personalizado <strong>RNC</strong>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÁREA OCULTA PARA IMPRESSÃO (A4 OU 80MM) -->
+  <div id="print-area" class="hidden"></div>
+
+  <script>
+    // =========================================================================
+    // DADOS E CATÁLOGO DE APARELHOS (INICIA ZERADO)
+    // =========================================================================
+    const STORAGE_KEY_OS = 'robinhonetcell_os_v1';
+    const STORAGE_KEY_CLIENTS = 'robinhonetcell_clients_v1';
+
+    const DEVICE_CATALOG = {
+      Apple: [
+        'iPhone 8 / 8 Plus', 'iPhone X / XR / XS', 'iPhone 11', 'iPhone 11 Pro / Pro Max',
+        'iPhone 12 / 12 Mini', 'iPhone 12 Pro / Pro Max', 'iPhone 13 / 13 Mini',
+        'iPhone 13 Pro / Pro Max', 'iPhone 14 / 14 Plus', 'iPhone 14 Pro / Pro Max',
+        'iPhone 15 / 15 Plus', 'iPhone 15 Pro / Pro Max', 'iPhone 16 / 16 Pro Max'
+      ],
+      Samsung: [
+        'Galaxy A13 / A14 / A15', 'Galaxy A23 / A24 / A25', 'Galaxy A32 / A34 / A35',
+        'Galaxy A52 / A53 / A54 / A55', 'Galaxy A71 / A72 / A73', 'Galaxy M14 / M34 / M54',
+        'Galaxy S20 FE / S21 FE', 'Galaxy S22 / S22 Ultra', 'Galaxy S23 / S23 Ultra',
+        'Galaxy S24 / S24+ / S24 Ultra'
+      ],
+      Motorola: [
+        'Moto G14 / G24 / G34', 'Moto G52 / G53 / G54', 'Moto G73 / G84',
+        'Moto E13 / E22 / E32', 'Moto Edge 30 / 30 Neo', 'Moto Edge 40 / 40 Neo',
+        'Moto Edge 50 Fusion / Pro'
+      ],
+      Xiaomi: [
+        'Redmi 9A / 9C / 10C', 'Redmi 12 / 12C / 13C', 'Redmi Note 11 / 11S',
+        'Redmi Note 12 / 12 Pro', 'Redmi Note 13 / 13 Pro', 'Poco X5 / X5 Pro',
+        'Poco X6 / X6 Pro', 'Poco M5 / M6 Pro'
+      ],
+      Realme: [
+        'Realme C51 / C53 / C55', 'Realme C65 / C67', 'Realme 11 / 11 Pro+', 'Realme 12 / 12 Pro+'
+      ],
+      ASUS: [
+        'Zenfone 8 / 9 / 10', 'ROG Phone 6 / 7 / 8'
+      ],
+      LG: [
+        'LG K22 / K41S / K51S', 'LG K52 / K61 / K62', 'LG Velvet'
+      ]
+    };
+
+    const DEVICE_COLORS = ['Preto', 'Branco', 'Azul', 'Verde', 'Roxo', 'Dourado', 'Grafite', 'Prata', 'Vermelho', 'Rosa'];
+    const CHECKLIST_ITEMS = [
+      'Tela quebrada', 'Não liga', 'Sem som', 'Câmera com defeito',
+      'Bateria viciada', 'Molhado', 'Sem chip/gaveta', 'Carcaça riscada'
+    ];
+    const PAYMENT_METHODS = ['PIX', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'Transferência'];
+
+    let orders = JSON.parse(localStorage.getItem(STORAGE_KEY_OS) || '[]');
+    let clients = JSON.parse(localStorage.getItem(STORAGE_KEY_CLIENTS) || '[]');
+    let currentFilter = 'Todas';
+    let selectedChecklist = [];
+    let patternSequence = [];
+    let isDrawingPattern = false;
+
+    function persistData() {
+      localStorage.setItem(STORAGE_KEY_OS, JSON.stringify(orders));
+      localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
+    }
+
+    // =========================================================================
+    // PWA ICON & MANIFEST DINÂMICOS (IPHONE)
+    // =========================================================================
+    function initPWAAssets() {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 180;
+        canvas.height = 180;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#2563EB';
+        ctx.fillRect(0, 0, 180, 180);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 54px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('RNC', 90, 92);
+        const iconUrl = canvas.toDataURL('image/png');
+        document.getElementById('apple-touch-icon').href = iconUrl;
+
+        const manifest = {
+          name: 'RobinhoNetCell — Gestão de OS',
+          short_name: 'RobinhoNetCell',
+          start_url: '.',
+          display: 'standalone',
+          background_color: '#F8FAFC',
+          theme_color: '#2563EB',
+          icons: [{ src: iconUrl, sizes: '180x180', type: 'image/png' }]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+      } catch (e) {}
+    }
+
+    // =========================================================================
+    // NAVEGAÇÃO E RENDERIZAÇÃO DO DASHBOARD
+    // =========================================================================
+    function switchTab(tab) {
+      document.getElementById('view-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+      document.getElementById('view-clients').classList.toggle('hidden', tab !== 'clients');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const active = btn.dataset.nav === tab;
+        btn.className = btn.className.includes('flex-col')
+          ? `nav-btn flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold ${active ? 'text-blue-600' : 'text-slate-500'}`
+          : `nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition ${active ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`;
+      });
+
+      if (tab === 'dashboard') {
+        renderKPIs();
+        renderStatusFilters();
+        renderOSList();
+      } else {
+        renderClientsList();
+      }
+      lucide.createIcons();
+    }
+
+    function formatBRL(val) {
+      return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function statusBadge(status) {
+      const map = {
+        'Aberta': 'bg-sky-50 text-sky-700 border-sky-200',
+        'Em Manutenção': 'bg-amber-50 text-amber-700 border-amber-200',
+        'Aguardando Peça': 'bg-orange-50 text-orange-700 border-orange-200',
+        'Pronta para Retirada': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        'Entregue': 'bg-slate-100 text-slate-700 border-slate-200'
+      };
+      return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${map[status] || 'bg-slate-100 text-slate-700'}">${status}</span>`;
+    }
+
+    function renderKPIs() {
+      const now = new Date();
+      const monthOrders = orders.filter(o => {
+        const d = new Date(o.createdAt);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      });
+      const monthRevenue = monthOrders
+        .filter(o => o.status === 'Pronta para Retirada' || o.status === 'Entregue' || o.paid)
+        .reduce((acc, o) => acc + Number(o.paidAmount || o.price || 0), 0);
+
+      const cards = [
+        { label: 'OS Abertas', value: orders.filter(o => o.status === 'Aberta').length, color: 'text-sky-600', icon: 'folder-open' },
+        { label: 'Em Manutenção', value: orders.filter(o => o.status === 'Em Manutenção').length, color: 'text-amber-600', icon: 'wrench' },
+        { label: 'Aguardando Peça', value: orders.filter(o => o.status === 'Aguardando Peça').length, color: 'text-orange-600', icon: 'package-clock' },
+        { label: 'Prontas p/ Retirada', value: orders.filter(o => o.status === 'Pronta para Retirada').length, color: 'text-emerald-600', icon: 'check-circle-2' },
+        { label: 'Faturamento do Mês', value: formatBRL(monthRevenue), color: 'text-blue-600', icon: 'wallet', span: 'col-span-2 lg:col-span-1' }
+      ];
+
+      document.getElementById('kpi-cards').innerHTML = cards.map(c => `
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs ${c.span || ''}">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-slate-500">${c.label}</span>
+            <i data-lucide="${c.icon}" class="w-4 h-4 ${c.color}"></i>
+          </div>
+          <div class="text-xl md:text-2xl font-extrabold text-slate-900">${c.value}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderStatusFilters() {
+      const statuses = ['Todas', 'Aberta', 'Em Manutenção', 'Aguardando Peça', 'Pronta para Retirada', 'Entregue'];
+      document.getElementById('status-filters').innerHTML = statuses.map(st => `
+        <button onclick="setFilter('${st}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+          currentFilter === st ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+        }">${st}</button>
+      `).join('');
+    }
+
+    function setFilter(st) {
+      currentFilter = st;
+      renderStatusFilters();
+      renderOSList();
+    }
+
+    function renderOSList() {
+      const q = (document.getElementById('os-search')?.value || '').toLowerCase().trim();
+      const filtered = orders.filter(o => {
+        const matchStatus = currentFilter === 'Todas' || o.status === currentFilter;
+        const matchQuery = !q ||
+          o.number.toLowerCase().includes(q) ||
+          o.clientName.toLowerCase().includes(q) ||
+          o.deviceModel.toLowerCase().includes(q) ||
+          o.deviceBrand.toLowerCase().includes(q) ||
+          (o.deviceImei || '').toLowerCase().includes(q);
+        return matchStatus && matchQuery;
+      });
+
+      const container = document.getElementById('os-list');
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+              <i data-lucide="smartphone" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-bold text-slate-800">Nenhuma Ordem de Serviço encontrada</h3>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">O banco de dados inicia limpo. Clique em <strong>Nova OS</strong> para cadastrar o primeiro aparelho na RobinhoNetCell.</p>
+            <button onclick="openNewOSModal()" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700">
+              <i data-lucide="plus" class="w-4 h-4"></i> Cadastrar Primeira OS
+            </button>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = filtered.map(o => `
+        <div onclick="openOSDetail('${o.id}')" class="bg-white rounded-2xl border border-slate-200 p-4 hover:border-blue-400 hover:shadow-sm transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-mono text-xs font-extrabold px-2 py-0.5 rounded-lg bg-slate-900 text-white">${o.number}</span>
+              ${statusBadge(o.status)}
+              ${o.paid ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">Recibo Quitado</span>' : ''}
+              <span class="text-xs text-slate-400">${new Date(o.createdAt).toLocaleDateString('pt-BR')}</span>
+            </div>
+            <h4 class="font-bold text-slate-900 text-base">${o.deviceBrand} ${o.deviceModel} <span class="text-xs font-normal text-slate-500">${o.deviceColor ? `(${o.deviceColor})` : ''}</span></h4>
+            <p class="text-xs text-slate-600"><strong>Cliente:</strong> ${o.clientName} • ${o.clientPhone}</p>
+            <p class="text-xs text-slate-500 line-clamp-1"><strong>Defeito:</strong> ${o.defect}</p>
+          </div>
+          <div class="flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
+            <span class="text-base font-extrabold text-blue-600">${formatBRL(o.price)}</span>
+            <span class="text-xs font-semibold text-slate-400 inline-flex items-center gap-1">Ver detalhes <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
+          </div>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // =========================================================================
+    // SELEÇÃO RÁPIDA DE APARELHOS, CORES, CHECKLIST E PADRÃO ANDROID
+    // =========================================================================
+    function renderBrandButtons(selectedBrand = '') {
+      const brands = Object.keys(DEVICE_CATALOG);
+      document.getElementById('brand-buttons').innerHTML = brands.map(b => `
+        <button type="button" onclick="selectBrand('${b}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+          selectedBrand === b
+            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+            : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
+        }">${b}</button>
+      `).join('');
+    }
+
+    function selectBrand(brand) {
+      document.getElementById('os-device-brand').value = brand;
+      renderBrandButtons(brand);
+      document.getElementById('model-catalog-label').textContent = `Modelos ${brand} (clique para selecionar):`;
+      document.getElementById('model-quick-filter').classList.remove('hidden');
+      document.getElementById('model-quick-filter').value = '';
+      document.getElementById('custom-model-box').classList.remove('hidden');
+      renderModelButtons();
+    }
+
+    function renderModelButtons() {
+      const brand = document.getElementById('os-device-brand').value;
+      const filter = (document.getElementById('model-quick-filter').value || '').toLowerCase();
+      const currentModel = document.getElementById('os-device-model').value;
+      const list = (DEVICE_CATALOG[brand] || []).filter(m => m.toLowerCase().includes(filter));
+
+      const btns = list.map(m => `
+        <button type="button" onclick="selectModel('${m.replace(/'/g, "\'")}')" class="text-left px-2.5 py-2 rounded-xl text-xs font-semibold border transition truncate ${
+          currentModel === m
+            ? 'bg-blue-600 text-white border-blue-600'
+            : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
+        }">${m}</button>
+      `).join('');
+
+      document.getElementById('model-buttons').innerHTML = btns + `
+        <button type="button" onclick="focusCustomModel()" class="text-left px-2.5 py-2 rounded-xl text-xs font-bold border border-dashed border-blue-400 text-blue-600 bg-blue-50/60 hover:bg-blue-100">
+          + Outro modelo
+        </button>
+      `;
+    }
+
+    function selectModel(model) {
+      document.getElementById('os-device-model').value = model;
+      renderModelButtons();
+    }
+
+    function focusCustomModel() {
+      const input = document.getElementById('os-device-model');
+      input.value = '';
+      input.focus();
+      renderModelButtons();
+    }
+
+    function renderColorButtons(selected = '') {
+      document.getElementById('color-buttons').innerHTML = DEVICE_COLORS.map(c => `
+        <button type="button" onclick="selectColor('${c}')" class="px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
+          selected === c ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+        }">${c}</button>
+      `).join('');
+    }
+
+    function selectColor(color) {
+      document.getElementById('os-device-color').value = color;
+      renderColorButtons(color);
+    }
+
+    function renderChecklistButtons() {
+      document.getElementById('checklist-buttons').innerHTML = CHECKLIST_ITEMS.map(item => {
+        const active = selectedChecklist.includes(item);
+        return `
+          <button type="button" onclick="toggleChecklist('${item}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+            active ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+          }">${active ? '✓ ' : ''}${item}</button>
+        `;
+      }).join('');
+    }
+
+    function toggleChecklist(item) {
+      if (selectedChecklist.includes(item)) {
+        selectedChecklist = selectedChecklist.filter(i => i !== item);
+      } else {
+        selectedChecklist.push(item);
+      }
+      renderChecklistButtons();
+    }
+
+    // Padrão Android 3x3
+    const DOT_COORDS = [
+      { id: 1, x: 35, y: 35 }, { id: 2, x: 90, y: 35 }, { id: 3, x: 145, y: 35 },
+      { id: 4, x: 35, y: 90 }, { id: 5, x: 90, y: 90 }, { id: 6, x: 145, y: 90 },
+      { id: 7, x: 35, y: 145 }, { id: 8, x: 90, y: 145 }, { id: 9, x: 145, y: 145 }
+    ];
+
+    function initPatternGrid() {
+      const svg = document.getElementById('pattern-svg');
+      const handlePoint = (clientX, clientY) => {
+        const rect = svg.getBoundingClientRect();
+        const x = ((clientX - rect.left) / rect.width) * 180;
+        const y = ((clientY - rect.top) / rect.height) * 180;
+        DOT_COORDS.forEach(d => {
+          if (Math.hypot(d.x - x, d.y - y) < 20 && !patternSequence.includes(d.id)) {
+            patternSequence.push(d.id);
+            renderPatternSVG();
+          }
+        });
+      };
+
+      svg.onpointerdown = e => { isDrawingPattern = true; handlePoint(e.clientX, e.clientY); };
+      svg.onpointermove = e => { if (isDrawingPattern) handlePoint(e.clientX, e.clientY); };
+      window.addEventListener('pointerup', () => { isDrawingPattern = false; });
+      renderPatternSVG();
+    }
+
+    function clearPattern() {
+      patternSequence = [];
+      renderPatternSVG();
+    }
+
+    function renderPatternSVG() {
+      const linesG = document.getElementById('pattern-lines');
+      const dotsG = document.getElementById('pattern-dots');
+      let linesHTML = '';
+      for (let i = 0; i < patternSequence.length - 1; i++) {
+        const a = DOT_COORDS.find(d => d.id === patternSequence[i]);
+        const b = DOT_COORDS.find(d => d.id === patternSequence[i + 1]);
+        linesHTML += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#2563EB" stroke-width="4" stroke-linecap="round" />`;
+      }
+      linesG.innerHTML = linesHTML;
+
+      dotsG.innerHTML = DOT_COORDS.map(d => {
+        const active = patternSequence.includes(d.id);
+        return `
+          <circle cx="${d.x}" cy="${d.y}" r="${active ? 11 : 8}" fill="${active ? '#DBEAFE' : '#F1F5F9'}" stroke="${active ? '#2563EB' : '#94A3B8'}" stroke-width="2" />
+          <circle cx="${d.x}" cy="${d.y}" r="3.5" fill="${active ? '#2563EB' : '#64748B'}" />
+        `;
+      }).join('');
+
+      document.getElementById('pattern-text').textContent =
+        `Sequência: ${patternSequence.length ? patternSequence.join(' → ') : 'Nenhuma'}`;
+    }
+
+    // =========================================================================
+    // CADASTRO / EDIÇÃO DE OS
+    // =========================================================================
+    function openNewOSModal(editId = null) {
+      document.getElementById('os-form').reset();
+      document.getElementById('os-id').value = editId || '';
+      selectedChecklist = [];
+      patternSequence = [];
+
+      const select = document.getElementById('os-client-select');
+      select.innerHTML = '<option value="">Selecionar cliente cadastrado...</option>' +
+        clients.map(c => `<option value="${c.id}">${c.name} (${c.phone})</option>`).join('');
+
+      if (editId) {
+        const o = orders.find(x => x.id === editId);
+        document.getElementById('modal-os-title').textContent = `Editar ${o.number}`;
+        document.getElementById('os-client-name').value = o.clientName;
+        document.getElementById('os-client-phone').value = o.clientPhone;
+        document.getElementById('os-client-cpf').value = o.clientCpf || '';
+        selectBrand(o.deviceBrand);
+        document.getElementById('os-device-model').value = o.deviceModel;
+        renderModelButtons();
+        selectColor(o.deviceColor || '');
+        document.getElementById('os-device-imei').value = o.deviceImei || '';
+        document.getElementById('os-device-pass').value = o.devicePass || '';
+        selectedChecklist = [...(o.checklist || [])];
+        patternSequence = [...(o.pattern || [])];
+        document.getElementById('os-defect').value = o.defect;
+        document.getElementById('os-report').value = o.report || '';
+        document.getElementById('os-parts').value = o.parts || '';
+        document.getElementById('os-price').value = o.price || '';
+        document.getElementById('os-deadline').value = o.deadline || '';
+        document.getElementById('os-status').value = o.status;
+      } else {
+        document.getElementById('modal-os-title').textContent = 'Nova Ordem de Serviço';
+        renderBrandButtons('');
+        document.getElementById('model-buttons').innerHTML = '';
+        document.getElementById('model-quick-filter').classList.add('hidden');
+        document.getElementById('custom-model-box').classList.add('hidden');
+        renderColorButtons('');
+      }
+
+      renderChecklistButtons();
+      renderPatternSVG();
+      document.getElementById('modal-os-form').classList.remove('hidden');
+    }
+
+    function fillClientFromSelect() {
+      const id = document.getElementById('os-client-select').value;
+      const c = clients.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById('os-client-name').value = c.name;
+      document.getElementById('os-client-phone').value = c.phone;
+      document.getElementById('os-client-cpf').value = c.cpf || '';
+    }
+
+    function saveOS(e) {
+      e.preventDefault();
+      const brand = document.getElementById('os-device-brand').value;
+      if (!brand) {
+        alert('Selecione a marca do aparelho.');
+        return;
+      }
+
+      const id = document.getElementById('os-id').value;
+      const clientName = document.getElementById('os-client-name').value.trim();
+      const clientPhone = document.getElementById('os-client-phone').value.trim();
+      const clientCpf = document.getElementById('os-client-cpf').value.trim();
+
+      // Garante cadastro automático do cliente caso ainda não exista
+      let existingClient = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase() && c.phone === clientPhone);
+      if (!existingClient) {
+        existingClient = { id: 'CLI-' + Date.now(), name: clientName, phone: clientPhone, cpf: clientCpf };
+        clients.unshift(existingClient);
+      } else if (clientCpf && !existingClient.cpf) {
+        existingClient.cpf = clientCpf;
+      }
+
+      const existingOrder = id ? orders.find(o => o.id === id) : null;
+      const nextNum = 'OS-' + String(orders.length + 1).padStart(4, '0');
+
+      const payload = {
+        id: id || 'ORD-' + Date.now(),
+        number: existingOrder ? existingOrder.number : nextNum,
+        createdAt: existingOrder ? existingOrder.createdAt : new Date().toISOString(),
+        clientName,
+        clientPhone,
+        clientCpf,
+        deviceBrand: brand,
+        deviceModel: document.getElementById('os-device-model').value.trim(),
+        deviceColor: document.getElementById('os-device-color').value.trim(),
+        deviceImei: document.getElementById('os-device-imei').value.trim(),
+        devicePass: document.getElementById('os-device-pass').value.trim(),
+        pattern: [...patternSequence],
+        checklist: [...selectedChecklist],
+        defect: document.getElementById('os-defect').value.trim(),
+        report: document.getElementById('os-report').value.trim(),
+        parts: document.getElementById('os-parts').value.trim(),
+        price: Number(document.getElementById('os-price').value || 0),
+        deadline: document.getElementById('os-deadline').value.trim(),
+        status: document.getElementById('os-status').value,
+        paid: existingOrder ? existingOrder.paid : false,
+        paymentMethod: existingOrder ? existingOrder.paymentMethod : 'PIX',
+        paidAmount: existingOrder ? existingOrder.paidAmount : Number(document.getElementById('os-price').value || 0),
+        paidAt: existingOrder ? existingOrder.paidAt : ''
+      };
+
+      if (existingOrder) {
+        orders = orders.map(o => o.id === id ? payload : o);
+      } else {
+        orders.unshift(payload);
+      }
+
+      persistData();
+      closeModal('modal-os-form');
+      renderKPIs();
+      renderOSList();
+    }
+
+    // =========================================================================
+    // DETALHES DA OS, RECIBO DE QUITAÇÃO, WHATSAPP E IMPRESSÃO
+    // =========================================================================
+    function openOSDetail(id) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+
+      const statuses = ['Aberta', 'Em Manutenção', 'Aguardando Peça', 'Pronta para Retirada', 'Entregue'];
+
+      document.getElementById('os-detail-content').innerHTML = `
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+          <div class="flex items-center gap-2.5">
+            <span class="font-mono text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-900 text-white">${o.number}</span>
+            ${statusBadge(o.status)}
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="closeModal('modal-os-detail'); openNewOSModal('${o.id}')" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+              Editar OS
+            </button>
+            <button onclick="closeModal('modal-os-detail')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- ALTERAÇÃO RÁPIDA DE STATUS -->
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+            <span class="block text-xs font-bold text-slate-700">Alterar Status Rapidamente:</span>
+            <div class="flex flex-wrap gap-1.5">
+              ${statuses.map(st => `
+                <button onclick="quickChangeStatus('${o.id}', '${st}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold border transition ${
+                  o.status === st ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
+                }">${st}</button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- DADOS PRINCIPAIS -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div class="p-4 rounded-xl border border-slate-200 space-y-1">
+              <span class="text-xs font-bold uppercase text-blue-600">Cliente</span>
+              <p class="font-bold text-slate-900">${o.clientName}</p>
+              <p class="text-xs text-slate-600">WhatsApp: ${o.clientPhone}</p>
+              ${o.clientCpf ? `<p class="text-xs text-slate-600">CPF: ${o.clientCpf}</p>` : ''}
+            </div>
+            <div class="p-4 rounded-xl border border-slate-200 space-y-1">
+              <span class="text-xs font-bold uppercase text-blue-600">Aparelho</span>
+              <p class="font-bold text-slate-900">${o.deviceBrand} ${o.deviceModel} ${o.deviceColor ? `(${o.deviceColor})` : ''}</p>
+              <p class="text-xs text-slate-600">IMEI/Série: ${o.deviceImei || 'Não informado'}</p>
+              <p class="text-xs text-slate-600">Senha/PIN: ${o.devicePass || 'Nenhuma'} ${o.pattern?.length ? `• Padrão: ${o.pattern.join('→')}` : ''}</p>
+            </div>
+          </div>
+
+          <div class="p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+            <div><strong class="text-slate-700">Checklist de Entrada:</strong> ${o.checklist?.length ? o.checklist.join(', ') : 'Sem observações'}</div>
+            <div><strong class="text-slate-700">Defeito Relatado:</strong> ${o.defect}</div>
+            <div><strong class="text-slate-700">Laudo Técnico:</strong> ${o.report || 'Em análise'}</div>
+            <div><strong class="text-slate-700">Peças Utilizadas:</strong> ${o.parts || 'Nenhuma'}</div>
+            <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-sm">
+              <span><strong>Prazo:</strong> ${o.deadline || 'A combinar'}</span>
+              <span class="text-lg font-extrabold text-blue-600">${formatBRL(o.price)}</span>
+            </div>
+          </div>
+
+          <!-- RECIBO DE QUITAÇÃO / ENTREGA (PÓS-EXECUÇÃO) -->
+          <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-emerald-950">Recibo de Quitação & Entrega (Pós-Execução)</h4>
+                <p class="text-xs text-emerald-800">Registre o pagamento para emitir o recibo oficial com garantia de 90 dias.</p>
+              </div>
+              ${o.paid ? '<span class="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold">QUITADO</span>' : ''}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div>
+                <label class="block text-[11px] font-semibold text-emerald-900 mb-1">Forma de Pagamento</label>
+                <select id="rec-method-${o.id}" class="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-semibold">
+                  ${PAYMENT_METHODS.map(pm => `<option value="${pm}" ${(o.paymentMethod || 'PIX') === pm ? 'selected' : ''}>${pm}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-emerald-900 mb-1">Valor Pago (R$)</label>
+                <input id="rec-amount-${o.id}" type="number" step="0.01" value="${o.paidAmount || o.price || 0}" class="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white text-xs font-bold" />
+              </div>
+              <div class="flex items-end">
+                <button onclick="saveReceiptPayment('${o.id}')" class="w-full py-2 px-3 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700">
+                  Confirmar Pagamento
+                </button>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button onclick="printDocument('${o.id}', 'receipt-a4')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-xs font-semibold hover:bg-emerald-100">
+                <i data-lucide="file-check" class="w-3.5 h-3.5"></i> Recibo Quitação (A4 / PDF)
+              </button>
+              <button onclick="printDocument('${o.id}', 'receipt-80mm')" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white border border-emerald-300 text-emerald-900 text-xs font-semibold hover:bg-emerald-100">
+                <i data-lucide="receipt" class="w-3.5 h-3.5"></i> Recibo Térmico 80mm
+              </button>
+              <button onclick="sendWhatsApp('${o.id}', true)" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-700 text-white text-xs font-semibold hover:bg-emerald-800">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i> Enviar Recibo WhatsApp
+              </button>
+            </div>
+          </div>
+
+          <!-- AÇÕES DA OS (WHATSAPP, CONSULTA DO CLIENTE E COMPROVANTE DE ENTRADA) -->
+          <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+            <button onclick="sendWhatsApp('${o.id}', false)" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 text-white text-xs font-bold hover:bg-green-700">
+              <i data-lucide="message-circle" class="w-4 h-4"></i> Enviar OS no WhatsApp
+            </button>
+            <button onclick="openTrackForOrder('${o.number}')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 text-xs font-bold hover:bg-blue-100">
+              <i data-lucide="search-check" class="w-4 h-4"></i> Ver Tela do Cliente
+            </button>
+            <button onclick="printDocument('${o.id}', 'os-a4')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200">
+              <i data-lucide="printer" class="w-4 h-4"></i> Imprimir OS (A4)
+            </button>
+            <button onclick="printDocument('${o.id}', 'os-80mm')" class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-semibold hover:bg-slate-200">
+              <i data-lucide="scroll-text" class="w-4 h-4"></i> Cupom OS (80mm)
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modal-os-detail').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function quickChangeStatus(id, status) {
+      orders = orders.map(o => o.id === id ? { ...o, status } : o);
+      persistData();
+      renderKPIs();
+      renderOSList();
+      openOSDetail(id);
+    }
+
+    function saveReceiptPayment(id) {
+      const method = document.getElementById(`rec-method-${id}`).value;
+      const amount = Number(document.getElementById(`rec-amount-${id}`).value || 0);
+      orders = orders.map(o => o.id === id ? {
+        ...o,
+        paid: true,
+        paymentMethod: method,
+        paidAmount: amount,
+        paidAt: new Date().toISOString(),
+        status: o.status === 'Pronta para Retirada' ? 'Entregue' : o.status
+      } : o);
+      persistData();
+      renderKPIs();
+      renderOSList();
+      openOSDetail(id);
+    }
+
+    function sendWhatsApp(id, isReceipt) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+      const cleanPhone = o.clientPhone.replace(/\D/g, '');
+      const fullPhone = cleanPhone.length <= 11 ? '55' + cleanPhone : cleanPhone;
+
+      const text = isReceipt
+        ? `*ROBINHONETCELL — RECIBO DE QUITAÇÃO*
+` +
+          `OS: *${o.number}*
+` +
+          `Cliente: ${o.clientName}
+` +
+          `Aparelho: ${o.deviceBrand} ${o.deviceModel}
+` +
+          `Serviço: ${o.report || o.defect}
+` +
+          `Forma de Pagamento: *${o.paymentMethod || 'PIX'}*
+` +
+          `Valor Pago: *${formatBRL(o.paidAmount || o.price)}*
+` +
+          `Garantia Legal: *90 dias* sobre o serviço/peça substituída.
+` +
+          `Obrigado pela preferência!`
+        : `*ROBINHONETCELL — ATUALIZAÇÃO DE OS*
+` +
+          `Ordem de Serviço: *${o.number}*
+` +
+          `Cliente: ${o.clientName}
+` +
+          `Aparelho: ${o.deviceBrand} ${o.deviceModel}
+` +
+          `Status Atual: *${o.status}*
+` +
+          `Valor: *${formatBRL(o.price)}*
+` +
+          `Prazo: ${o.deadline || 'A combinar'}`;
+
+      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    // =========================================================================
+    // IMPRESSÃO (A4 E CUPOM TÉRMICO 80MM — OS E RECIBO DE QUITAÇÃO)
+    // =========================================================================
+    function printDocument(id, mode) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+
+      const isThermal = mode.endsWith('80mm');
+      const isReceipt = mode.startsWith('receipt');
+      const todayStr = new Date().toLocaleString('pt-BR');
+      const paidDateStr = o.paidAt ? new Date(o.paidAt).toLocaleString('pt-BR') : todayStr;
+
+      const wrapperStyle = isThermal
+        ? 'width: 76mm; margin: 0 auto; font-family: monospace; font-size: 11px; line-height: 1.35; padding: 6px;'
+        : 'width: 190mm; margin: 0 auto; font-family: Inter, Arial, sans-serif; font-size: 12px; line-height: 1.5; padding: 16px;';
+
+      document.getElementById('print-area').innerHTML = `
+        <div style="${wrapperStyle}">
+          <div style="text-align:center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 10px;">
+            <strong style="font-size:${isThermal ? '15px' : '20px'};">ROBINHONETCELL</strong><br/>
+            <span>Assistência Técnica & Loja de Celulares</span><br/>
+            <strong>${isReceipt ? 'RECIBO DE QUITAÇÃO E ENTREGA' : 'COMPROVANTE DE ORDEM DE SERVIÇO'} — ${o.number}</strong><br/>
+            <span style="font-size:10px;">Emitido em: ${todayStr}</span>
+          </div>
+
+          <div style="margin-bottom: 8px;">
+            <strong>CLIENTE:</strong> ${o.clientName}<br/>
+            <strong>TELEFONE:</strong> ${o.clientPhone} ${o.clientCpf ? `| <strong>CPF:</strong> ${o.clientCpf}` : ''}
+          </div>
+
+          <div style="margin-bottom: 8px; border-top: 1px dashed #000; padding-top: 8px;">
+            <strong>APARELHO:</strong> ${o.deviceBrand} ${o.deviceModel} ${o.deviceColor ? `(${o.deviceColor})` : ''}<br/>
+            <strong>IMEI/SÉRIE:</strong> ${o.deviceImei || 'Não informado'}<br/>
+            <strong>STATUS:</strong> ${o.status}
+          </div>
+
+          <div style="margin-bottom: 8px; border-top: 1px dashed #000; padding-top: 8px;">
+            <strong>DEFEITO RELATADO:</strong> ${o.defect}<br/>
+            ${o.checklist?.length ? `<strong>CHECKLIST:</strong> ${o.checklist.join(', ')}<br/>` : ''}
+            <strong>LAUDO / SERVIÇO:</strong> ${o.report || 'Conforme orçamento aprovado'}<br/>
+            ${o.parts ? `<strong>PEÇAS:</strong> ${o.parts}<br/>` : ''}
+          </div>
+
+          <div style="margin-bottom: 10px; border-top: 1px dashed #000; padding-top: 8px;">
+            ${isReceipt ? `
+              <strong>FORMA DE PAGAMENTO:</strong> ${o.paymentMethod || 'PIX'}<br/>
+              <strong>DATA DA QUITAÇÃO:</strong> ${paidDateStr}<br/>
+              <strong style="font-size:${isThermal ? '13px' : '15px'};">VALOR PAGO: ${formatBRL(o.paidAmount || o.price)}</strong>
+            ` : `
+              <strong>PRAZO ESTIMADO:</strong> ${o.deadline || 'A combinar'}<br/>
+              <strong style="font-size:${isThermal ? '13px' : '15px'};">VALOR TOTAL: ${formatBRL(o.price)}</strong>
+            `}
+          </div>
+
+          <div style="font-size:${isThermal ? '9.5px' : '10.5px'}; border-top: 1px dashed #000; padding-top: 8px; margin-bottom: 24px;">
+            <strong>TERMO DE GARANTIA (90 DIAS):</strong> Garantia legal de 90 dias (Art. 26 do CDC) exclusiva para o serviço executado e peças substituídas. A garantia não cobre mau uso, quedas, contato com líquidos, rompimento de lacre ou intervenção de terceiros.
+          </div>
+
+          <div style="display:flex; justify-content:space-between; gap:16px; margin-top:28px; text-align:center;">
+            <div style="flex:1; border-top:1px solid #000; padding-top:4px; font-size:10px;">
+              Assinatura do Cliente<br/>${o.clientName}
+            </div>
+            <div style="flex:1; border-top:1px solid #000; padding-top:4px; font-size:10px;">
+              RobinhoNetCell<br/>Responsável Técnico
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('print-area').classList.remove('hidden');
+      window.print();
+      setTimeout(() => document.getElementById('print-area').classList.add('hidden'), 300);
+    }
+
+    // =========================================================================
+    // CONSULTA EM TEMPO REAL DO CLIENTE
+    // =========================================================================
+    function openClientTrackModal() {
+      document.getElementById('track-result-box').innerHTML = '';
+      document.getElementById('modal-client-track').classList.remove('hidden');
+    }
+
+    function openTrackForOrder(osNumber) {
+      closeModal('modal-os-detail');
+      openClientTrackModal();
+      document.getElementById('track-os-number').value = osNumber;
+      const o = orders.find(x => x.number === osNumber);
+      const digits = (o?.clientPhone || '').replace(/\D/g, '');
+      document.getElementById('track-os-pin').value = digits.slice(-4);
+      runClientTracking();
+    }
+
+    function runClientTracking(e) {
+      if (e) e.preventDefault();
+      const num = document.getElementById('track-os-number').value.trim().toUpperCase();
+      const pin = document.getElementById('track-os-pin').value.replace(/\D/g, '');
+      const box = document.getElementById('track-result-box');
+
+      const o = orders.find(x => x.number.toUpperCase() === num);
+      if (!o) {
+        box.innerHTML = `<div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-semibold">Ordem de Serviço <strong>${num}</strong> não encontrada. Confira o número no seu comprovante.</div>`;
+        return;
+      }
+
+      const phoneDigits = (o.clientPhone || '').replace(/\D/g, '');
+      const cpfDigits = (o.clientCpf || '').replace(/\D/g, '');
+      const validPin = !pin || phoneDigits.endsWith(pin) || cpfDigits.endsWith(pin);
+
+      if (!validPin) {
+        box.innerHTML = `<div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-semibold">Os 4 últimos dígitos informados não conferem com o cadastro desta OS.</div>`;
+        return;
+      }
+
+      const steps = ['Aberta', 'Em Manutenção', 'Aguardando Peça', 'Pronta para Retirada', 'Entregue'];
+      const currentIdx = steps.indexOf(o.status);
+
+      box.innerHTML = `
+        <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-mono font-bold text-slate-500">${o.number}</span>
+              <h4 class="font-bold text-slate-900 text-base">${o.deviceBrand} ${o.deviceModel}</h4>
+              <p class="text-xs text-slate-500">Cliente: ${o.clientName.split(' ')[0]}***</p>
+            </div>
+            ${statusBadge(o.status)}
+          </div>
+
+          <div class="space-y-1.5">
+            ${steps.map((st, idx) => {
+              const done = idx <= currentIdx;
+              return `
+                <div class="flex items-center gap-2.5 text-xs ${done ? 'text-slate-900 font-bold' : 'text-slate-400'}">
+                  <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
+                    done ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-500'
+                  }">${done ? '✓' : idx + 1}</span>
+                  <span>${st}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+            <div><strong>Defeito informado:</strong> ${o.defect}</div>
+            <div><strong>Laudo / Serviço:</strong> ${o.report || 'Em avaliação técnica'}</div>
+            <div class="pt-1 flex justify-between font-bold text-sm text-blue-600">
+              <span>Valor do Serviço:</span>
+              <span>${formatBRL(o.price)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // CLIENTES E HISTÓRICO
+    // =========================================================================
+    function openNewClientModal() {
+      document.getElementById('modal-client-form').classList.remove('hidden');
+    }
+
+    function saveNewClient(e) {
+      e.preventDefault();
+      clients.unshift({
+        id: 'CLI-' + Date.now(),
+        name: document.getElementById('cli-name').value.trim(),
+        phone: document.getElementById('cli-phone').value.trim(),
+        cpf: document.getElementById('cli-cpf').value.trim()
+      });
+      persistData();
+      e.target.reset();
+      closeModal('modal-client-form');
+      renderClientsList();
+    }
+
+    function renderClientsList() {
+      const q = (document.getElementById('client-search')?.value || '').toLowerCase().trim();
+      const filtered = clients.filter(c =>
+        !q || c.name.toLowerCase().includes(q) || c.phone.includes(q) || (c.cpf || '').includes(q)
+      );
+
+      const container = document.getElementById('clients-list');
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center text-xs text-slate-500">
+            Nenhum cliente cadastrado ainda. Ao criar uma OS ou clicar em <strong>Novo Cliente</strong>, o histórico aparecerá aqui.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(c => {
+        const history = orders.filter(o => o.clientName.toLowerCase() === c.name.toLowerCase());
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-slate-900">${c.name}</h4>
+                <p class="text-xs text-slate-500">${c.phone} ${c.cpf ? `• CPF: ${c.cpf}` : ''}</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">${history.length} OS</span>
+            </div>
+            ${history.length ? `
+              <div class="pt-2 border-t border-slate-100 space-y-1">
+                ${history.map(h => `
+                  <div onclick="openOSDetail('${h.id}')" class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 hover:bg-blue-50 cursor-pointer">
+                    <span><strong>${h.number}</strong> — ${h.deviceBrand} ${h.deviceModel}</span>
+                    <span>${statusBadge(h.status)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
+    // EXPORTAÇÃO DO APP (INDEX.HTML) E BACKUP (.JSON)
+    // =========================================================================
+    function openBackupModal() { document.getElementById('modal-backup').classList.remove('hidden'); }
+    function openInstallModal() { document.getElementById('modal-install').classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function exportAppHTML() {
+      const html = '<!DOCTYPE html>
+' + document.documentElement.outerHTML;
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'index.html';
+      a.click();
+    }
+
+    function exportDataJSON() {
+      const data = { store: 'RobinhoNetCell', exportedAt: new Date().toISOString(), clients, orders };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `backup-robinhonetcell-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    }
+
+    function importDataJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const parsed = JSON.parse(ev.target.result);
+          if (Array.isArray(parsed.orders)) orders = parsed.orders;
+          if (Array.isArray(parsed.clients)) clients = parsed.clients;
+          persistData();
+          switchTab('dashboard');
+          closeModal('modal-backup');
+          alert('Backup restaurado com sucesso!');
+        } catch (err) {
+          alert('Arquivo JSON inválido.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetDatabase() {
+      if (!confirm('Tem certeza que deseja apagar todos os clientes e Ordens de Serviço?')) return;
+      orders = [];
+      clients = [];
+      persistData();
+      switchTab('dashboard');
+      closeModal('modal-backup');
+    }
+
+    // Inicialização
+    initPWAAssets();
+    initPatternGrid();
+    switchTab('dashboard');
+  </script>
+</body>
+</html>
