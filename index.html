@@ -2146,7 +2146,11 @@
       let dir = here.pathname;
       if (/\.[A-Za-z0-9]+$/.test(dir)) dir = dir.replace(/[^/]*$/, '');
       if (!dir.endsWith('/')) dir += '/';
-      return here.origin + dir;
+      const base = new URL(here.href);
+      base.pathname = dir;
+      base.search = '';
+      base.hash = '';
+      return base.href;
     }
 
     function trackingLink(o) {

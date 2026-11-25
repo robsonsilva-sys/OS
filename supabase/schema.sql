@@ -52,6 +52,12 @@ create table if not exists public.orders (
   updated_at      timestamptz not null default now()
 );
 
+-- Garante as colunas de autorização também em bancos que já existiam
+-- (create table if not exists não altera tabelas antigas).
+alter table public.orders add column if not exists authorized_at timestamptz;
+alter table public.orders add column if not exists authorized_by text not null default '';
+create index if not exists idx_orders_authorized_at on public.orders (authorized_at);
+
 -- -----------------------------------------------------------------------------
 -- RECIBOS / PAGAMENTOS (histórico de quitações)
 -- -----------------------------------------------------------------------------
