@@ -10,8 +10,10 @@ Aplicativo de arquivo único (`index.html`), sem servidor e sem instalação: os
 - **Cadastro de OS em 1 Clique:** Seleção rápida de marca (Apple, Samsung, Motorola, Xiaomi, Realme, ASUS, LG), catálogo clicável de modelos, cores, checklist de entrada e desenho de padrão Android 3x3.
 - **Consulta em Tempo Real do Cliente:** Acompanhamento visual por etapas com número da OS e validação pelos **4 últimos dígitos** do telefone/CPF (o número pode ser digitado como `OS-0001`, `0001` ou `1`).
 - **Link de acompanhamento pelo WhatsApp:** a loja envia um link que abre a tela exclusiva do cliente (`cliente.html`), já preenchida e validada, com o status **atualizado automaticamente a cada 10 segundos** (e ao voltar para a aba). Essa página não tem nenhum botão de editar, criar ou excluir OS — apenas consulta.
-- **Recibo de Quitação & Impressão:** Emissão de recibo pós-execução com forma de pagamento, garantia legal de 90 dias (CDC), envio formatado no WhatsApp e impressão em **Folha A4 / PDF** ou **Cupom Térmico 80mm**.
-- **Pré-visualização antes de imprimir/enviar:** o recibo e a OS abrem em uma tela de conferência com alternância entre **Recibo/OS** e **A4/Cupom 80mm**, aviso quando o pagamento ainda não foi registrado e botões de imprimir, salvar em PDF e enviar no WhatsApp.
+- **Recibo de Quitação & Impressão:** emissão de recibo pós-execução com forma de pagamento e garantia legal de 90 dias (CDC); o envio pelo WhatsApp gera o recibo em **PDF** (anexo no celular quando o navegador permite compartilhar arquivos, ou download + envio no desktop), além da impressão em A4 ou cupom 80mm.
+- **Pré-visualização antes de imprimir/enviar:** o recibo e a OS abrem em uma tela de conferência com alternância entre **Recibo/OS** e **A4/Cupom 80mm**, aviso quando o pagamento ainda não foi registrado e botões de imprimir, **baixar PDF** e enviar no WhatsApp.
+- **Autorização do cliente:** na tela de acompanhamento o cliente marca que autoriza a execução do serviço; a loja vê o status **AUTORIZADO** no detalhe da OS e no documento impresso.
+- **Aba de pagamento (cliente):** mostra como o valor foi recebido (**PIX, Dinheiro/espécie, Cartão de Crédito/Débito ou Transferência**), valor e data; após pagamento confirmado **e** OS entregue, o cliente pode baixar o recibo em PDF.
 - **Clientes & Histórico:** Cadastro de clientes com histórico de todas as OS do aparelho/telefone.
 - **Edição e Exclusão de OS:** Alteração de status em um clique e exclusão com confirmação.
 - **Numeração sequencial:** as OS são numeradas em sequência e o número de uma OS excluída **não é reaproveitado**.
@@ -41,6 +43,8 @@ Se precisar recriar o banco do zero:
 
 O schema cria numeração automática de OS, índices e políticas de acesso, e pode ser executado novamente sem apagar dados.
 
+Para ativar a **autorização do cliente**, execute também [`supabase/migration_autorizacao.sql`](supabase/migration_autorizacao.sql) no SQL Editor (cria `authorized_at` e `authorized_by` em `orders`). Quem vai recriar o banco do zero não precisa: o `schema.sql` já foi atualizado.
+
 > ⚠️ **Segurança:** o modo configurado é **sem login (anon liberado)**, escolhido para uso interno da loja. Como a chave anon fica visível no site publicado, qualquer pessoa com o link pode ler e alterar os dados. Se o sistema ficar público, migre para login com Supabase Auth.
 
 ## Acompanhamento pelo WhatsApp (tempo real)
@@ -54,6 +58,11 @@ https://robsonsilva-sys.github.io/OS/cliente.html?os=OS-0001&pin=1234
 Ao abrir, a página **[`cliente.html`](cliente.html)** consulta a OS com os 4 últimos dígitos e fica **ao vivo**: busca o status no Supabase a cada 10 segundos e também quando a aba volta ao foco. Assim, quando a loja mudar o status para *Em Manutenção*, *Pronta para Retirada* etc., a tela do cliente atualiza sozinha.
 
 Essa página é **somente de acompanhamento**: não exibe menu de gestão, não tem botões de criar/editar/excluir OS e não dá acesso ao aplicativo da loja (`index.html`). O painel continua disponível apenas em `index.html`.
+
+Dentro dela o cliente pode:
+1. **Autorizar o serviço** com um checkbox e um clique — a loja vê o status no detalhe da OS;
+2. Abrir a aba **Pagamento** e conferir se foi **PIX, Dinheiro, Cartão ou Transferência**, o valor e a data;
+3. **Baixar o recibo em PDF** assim que o pagamento for confirmado e a OS estiver *Entregue*.
 
 > O link só funciona enquanto o site estiver publicado e o banco acessível. O PIN é apenas os 4 últimos dígitos do telefone/CPF já usados no atendimento — não compartilhe o link com terceiros.
 

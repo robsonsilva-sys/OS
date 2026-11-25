@@ -46,6 +46,8 @@ create table if not exists public.orders (
   payment_method  text not null default 'PIX',
   paid_amount     numeric(12,2) not null default 0 check (paid_amount >= 0),
   paid_at         timestamptz,
+  authorized_at   timestamptz,
+  authorized_by   text not null default '',
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
