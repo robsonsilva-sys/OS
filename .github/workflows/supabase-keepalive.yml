@@ -1,0 +1,46 @@
+name: Supabase keep-alive
+
+# Mantém o projeto do Supabase ativo (o plano gratuito pausa após ~7 dias sem uso).
+# Roda a cada 2 dias e também pode ser disparado manualmente na aba Actions.
+
+on:
+  schedule:
+    # 08:00 UTC a cada 2 dias (05:00 no horário de Brasília)
+    - cron: "0 8 */2 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Consultar o banco (conta como atividade)
+        env:
+          SUPABASE_URL: "${{ secrets.SUPABASE_URL || 'https://zubrrdburxbdduksfhxr.supabase.co' }}"
+          SUPABASE_ANON_KEY: "${{ secrets.SUPABASE_ANON_KEY || 'sb_publishable_ix-GkEENtRSnuPwAv9OvqQ_4TidAc83' }}"
+        run: |
+          set -euo pipefail
+
+          status=$(curl -sS -o /tmp/resposta.json -w "%{http_code}" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL}/rest/v1/shop_settings?select=id&limit=1")
+
+          echo "HTTP ${status}"
+          cat /tmp/resposta.json
+          echo
+
+          if [ "${status}" != "200" ]; then
+            echo "::error::Falha ao consultar o Supabase (HTTP ${status})."
+            exit 1
+          fi
+
+          echo "Banco ativo — projeto mantido sem pausa."

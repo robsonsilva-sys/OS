@@ -12,6 +12,7 @@
   <meta name="theme-color" content="#2563EB" />
   <link id="apple-touch-icon" rel="apple-touch-icon" />
   <link id="pwa-manifest" rel="manifest" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232563EB'/%3E%3Ctext x='32' y='42' font-family='Arial,sans-serif' font-size='24' font-weight='bold' fill='%23fff' text-anchor='middle'%3ERNC%3C/text%3E%3C/svg%3E" />
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -217,7 +218,7 @@
   </nav>
 
   <!-- MODAL: CADASTRO / EDIÇÃO DE OS -->
-  <div id="modal-os-form" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+  <div id="modal-os-form" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-3 md:p-6">
     <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-4">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
         <h3 id="modal-os-title" class="font-bold text-lg text-slate-900">Nova Ordem de Serviço</h3>
@@ -366,12 +367,12 @@
   </div>
 
   <!-- MODAL: DETALHES DA OS, RECIBO & WHATSAPP -->
-  <div id="modal-os-detail" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+  <div id="modal-os-detail" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-3 md:p-6">
     <div id="os-detail-content" class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-4"></div>
   </div>
 
   <!-- MODAL: CONSULTA EM TEMPO REAL DO CLIENTE -->
-  <div id="modal-client-track" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+  <div id="modal-client-track" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-3 md:p-6">
     <div class="max-w-xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-6">
       <div class="px-6 py-4 bg-emerald-600 text-white flex items-center justify-between">
         <div class="flex items-center gap-2.5">
@@ -394,7 +395,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">4 últimos dígitos Tel/CPF</label>
-            <input id="track-os-pin" maxlength="4" type="text" placeholder="Ex: 8899" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+            <input id="track-os-pin" required minlength="4" maxlength="4" inputmode="numeric" type="text" placeholder="Ex: 8899" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
           </div>
           <div class="flex items-end">
             <button type="submit" class="w-full py-2 px-4 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
@@ -409,7 +410,7 @@
   </div>
 
   <!-- MODAL: NOVO CLIENTE -->
-  <div id="modal-client-form" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+  <div id="modal-client-form" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-3 md:p-6">
     <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-8">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
         <h3 class="font-bold text-lg text-slate-900">Cadastrar Cliente</h3>
@@ -439,7 +440,7 @@
   </div>
 
   <!-- MODAL: EXPORTAR & BACKUP -->
-  <div id="modal-backup" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+  <div id="modal-backup" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-3 md:p-6">
     <div class="max-w-lg mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-8">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
         <h3 class="font-bold text-lg text-slate-900">Exportar App & Backup</h3>
@@ -473,8 +474,33 @@
           </div>
         </div>
 
+        <div class="p-4 rounded-xl bg-indigo-50 border border-indigo-100 space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="font-bold text-sm text-indigo-950">3. Nuvem (Supabase)</h4>
+            <span id="cloud-status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600">Nuvem</span>
+          </div>
+          <p class="text-xs text-indigo-900">
+            Envie e recupere os dados direto do banco da loja. O app continua funcionando offline — quando a internet voltar, basta sincronizar.
+          </p>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button onclick="cloudPushAll()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700">
+              <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+              Enviar para a nuvem
+            </button>
+            <button onclick="cloudPullAll()" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-indigo-300 text-indigo-800 text-xs font-semibold hover:bg-indigo-100">
+              <i data-lucide="cloud-download" class="w-4 h-4"></i>
+              Baixar da nuvem
+            </button>
+            <button onclick="cloudTest(false)" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100">
+              <i data-lucide="plug" class="w-4 h-4"></i>
+              Testar conexão
+            </button>
+          </div>
+          <div id="cloud-message" class="text-[11px] font-semibold text-slate-500">Conectando...</div>
+        </div>
+
         <div class="pt-2 border-t border-slate-100 flex justify-between items-center">
-          <span class="text-xs text-slate-400">Banco de dados local do navegador</span>
+          <span class="text-xs text-slate-400">Dados salvos no aparelho e sincronizados com a nuvem</span>
           <button onclick="resetDatabase()" class="text-xs font-semibold text-rose-600 hover:underline">
             Zerar Banco de Dados
           </button>
@@ -484,7 +510,7 @@
   </div>
 
   <!-- MODAL: INSTALAR NO IPHONE -->
-  <div id="modal-install" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs overflow-y-auto p-3 md:p-6">
+  <div id="modal-install" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm overflow-y-auto p-3 md:p-6">
     <div class="max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden my-8">
       <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
         <h3 class="font-bold text-lg text-slate-900">Instalar no iPhone (iOS)</h3>
@@ -516,6 +542,7 @@
     // =========================================================================
     const STORAGE_KEY_OS = 'robinhonetcell_os_v1';
     const STORAGE_KEY_CLIENTS = 'robinhonetcell_clients_v1';
+    const STORAGE_KEY_SEQ = 'robinhonetcell_seq_v1';
 
     const DEVICE_CATALOG = {
       Apple: [
@@ -558,16 +585,316 @@
     ];
     const PAYMENT_METHODS = ['PIX', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'Transferência'];
 
-    let orders = JSON.parse(localStorage.getItem(STORAGE_KEY_OS) || '[]');
-    let clients = JSON.parse(localStorage.getItem(STORAGE_KEY_CLIENTS) || '[]');
+    function readStorage(key) {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(key) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    let orders = readStorage(STORAGE_KEY_OS).map(normalizeOrder);
+    let clients = readStorage(STORAGE_KEY_CLIENTS).map(normalizeClient);
     let currentFilter = 'Todas';
     let selectedChecklist = [];
     let patternSequence = [];
     let isDrawingPattern = false;
+    let currentModelList = [];
 
     function persistData() {
-      localStorage.setItem(STORAGE_KEY_OS, JSON.stringify(orders));
-      localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
+      try {
+        localStorage.setItem(STORAGE_KEY_OS, JSON.stringify(orders));
+        localStorage.setItem(STORAGE_KEY_CLIENTS, JSON.stringify(clients));
+      } catch (e) {
+        alert('Não foi possível salvar os dados neste navegador (armazenamento cheio ou bloqueado).');
+      }
+    }
+
+    // =========================================================================
+    // NUVEM (SUPABASE) — sincronização opcional, com funcionamento offline
+    // =========================================================================
+    const SUPABASE_URL = 'https://zubrrdburxbdduksfhxr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_ix-GkEENtRSnuPwAv9OvqQ_4TidAc83';
+
+    let supabaseClient = null;
+    let supabaseLoader = null;
+    let cloudBusy = false;
+
+    function getSupabase() {
+      if (supabaseClient) return Promise.resolve(supabaseClient);
+      if (supabaseLoader) return supabaseLoader;
+
+      supabaseLoader = new Promise((resolve, reject) => {
+        const create = () => {
+          try {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            resolve(supabaseClient);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        if (window.supabase && typeof window.supabase.createClient === 'function') return create();
+
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.async = true;
+        script.onload = create;
+        script.onerror = () => {
+          supabaseLoader = null;
+          reject(new Error('Não foi possível carregar a biblioteca do Supabase. Verifique a internet.'));
+        };
+        document.head.appendChild(script);
+      });
+      return supabaseLoader;
+    }
+
+    function orderToRow(o) {
+      return {
+        id: o.id,
+        number: o.number,
+        client_name: o.clientName,
+        client_phone: o.clientPhone,
+        client_cpf: o.clientCpf,
+        device_brand: o.deviceBrand,
+        device_model: o.deviceModel,
+        device_color: o.deviceColor,
+        device_imei: o.deviceImei,
+        device_pass: o.devicePass,
+        pattern: (o.pattern || []).map(Number),
+        checklist: o.checklist || [],
+        defect: o.defect,
+        report: o.report,
+        parts: o.parts,
+        price: Number(o.price) || 0,
+        deadline: o.deadline,
+        status: o.status,
+        paid: !!o.paid,
+        payment_method: o.paymentMethod || 'PIX',
+        paid_amount: Number(o.paidAmount) || 0,
+        paid_at: o.paidAt || null,
+        created_at: o.createdAt,
+        updated_at: o.updatedAt || new Date().toISOString()
+      };
+    }
+
+    function rowToOrder(r) {
+      return normalizeOrder({
+        id: r.id,
+        number: r.number,
+        createdAt: r.created_at,
+        clientName: r.client_name,
+        clientPhone: r.client_phone,
+        clientCpf: r.client_cpf,
+        deviceBrand: r.device_brand,
+        deviceModel: r.device_model,
+        deviceColor: r.device_color,
+        deviceImei: r.device_imei,
+        devicePass: r.device_pass,
+        pattern: r.pattern,
+        checklist: r.checklist,
+        defect: r.defect,
+        report: r.report,
+        parts: r.parts,
+        price: r.price,
+        deadline: r.deadline,
+        status: r.status,
+        paid: r.paid,
+        paymentMethod: r.payment_method,
+        paidAmount: r.paid_amount,
+        paidAt: r.paid_at || '',
+        updatedAt: r.updated_at
+      });
+    }
+
+    function clientToRow(c) {
+      return {
+        id: c.id,
+        name: c.name,
+        phone: c.phone,
+        cpf: c.cpf,
+        updated_at: c.updatedAt || undefined
+      };
+    }
+
+    function rowToClient(r) {
+      return normalizeClient({
+        id: r.id,
+        name: r.name,
+        phone: r.phone,
+        cpf: r.cpf,
+        updatedAt: r.updated_at
+      });
+    }
+
+    function setCloudStatus(message, kind = 'idle') {
+      const text = document.getElementById('cloud-message');
+      if (text) {
+        text.textContent = message;
+        text.className = 'text-[11px] font-semibold ' + (
+          kind === 'error' ? 'text-rose-600' :
+          kind === 'ok' ? 'text-emerald-700' :
+          kind === 'busy' ? 'text-indigo-600' : 'text-slate-500'
+        );
+      }
+      const badge = document.getElementById('cloud-status-badge');
+      if (badge) {
+        badge.textContent = kind === 'ok' ? 'Conectado' : kind === 'error' ? 'Offline' : kind === 'busy' ? 'Sincronizando' : 'Nuvem';
+        badge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-bold ' + (
+          kind === 'ok' ? 'bg-emerald-100 text-emerald-700' :
+          kind === 'error' ? 'bg-rose-100 text-rose-700' :
+          kind === 'busy' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+        );
+      }
+    }
+
+    async function cloudTest(silent = true) {
+      setCloudStatus('Conectando ao banco...', 'busy');
+      try {
+        const sb = await getSupabase();
+        const { count, error } = await sb.from('orders').select('id', { count: 'exact', head: true });
+        if (error) throw error;
+        setCloudStatus(`Conectado — ${count} OS na nuvem.`, 'ok');
+        return true;
+      } catch (e) {
+        setCloudStatus('Sem conexão: ' + (e.message || e), 'error');
+        if (!silent) alert('Não foi possível conectar ao banco.\n\n' + (e.message || e));
+        return false;
+      }
+    }
+
+    async function cloudPushOrder(id) {
+      const order = orders.find(o => o.id === id);
+      if (!order) return;
+      try {
+        const sb = await getSupabase();
+        const { error } = await sb.from('orders').upsert(orderToRow(order), { onConflict: 'id' });
+        if (error) throw error;
+        setCloudStatus(`OS ${order.number} salva na nuvem.`, 'ok');
+      } catch (e) {
+        console.warn('[nuvem]', e.message || e);
+        setCloudStatus('Sem conexão com a nuvem (salvo apenas no aparelho).', 'error');
+      }
+    }
+
+    async function cloudPushClient(id) {
+      const client = clients.find(c => c.id === id);
+      if (!client) return;
+      try {
+        const sb = await getSupabase();
+        const { error } = await sb.from('clients').upsert(clientToRow(client), { onConflict: 'id' });
+        if (error) throw error;
+      } catch (e) {
+        console.warn('[nuvem]', e.message || e);
+      }
+    }
+
+    async function cloudDeleteOrder(id) {
+      try {
+        const sb = await getSupabase();
+        await sb.from('orders').delete().eq('id', id);
+      } catch (e) {
+        console.warn('[nuvem]', e.message || e);
+      }
+    }
+
+    async function cloudInsertReceipt(order) {
+      try {
+        const sb = await getSupabase();
+        await sb.from('receipts').insert({
+          order_id: order.id,
+          amount: Number(order.paidAmount) || 0,
+          method: order.paymentMethod || 'PIX',
+          paid_at: order.paidAt || new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn('[nuvem]', e.message || e);
+      }
+    }
+
+    function mergeRecords(localList, remoteList) {
+      const byId = new Map(localList.map(item => [item.id, item]));
+      let added = 0;
+      let changed = 0;
+      remoteList.forEach(remote => {
+        const local = byId.get(remote.id);
+        if (!local) {
+          byId.set(remote.id, remote);
+          added++;
+          return;
+        }
+        const localTime = new Date(local.updatedAt || 0).getTime() || 0;
+        const remoteTime = new Date(remote.updatedAt || 0).getTime() || 0;
+        if (remoteTime > localTime) {
+          byId.set(remote.id, { ...local, ...remote });
+          changed++;
+        }
+      });
+      return { list: [...byId.values()], added, changed };
+    }
+
+    async function cloudPushAll(silent = false) {
+      if (cloudBusy) return;
+      cloudBusy = true;
+      setCloudStatus('Enviando dados para a nuvem...', 'busy');
+      try {
+        const sb = await getSupabase();
+        if (clients.length) {
+          const { error } = await sb.from('clients').upsert(clients.map(clientToRow), { onConflict: 'id' });
+          if (error) throw error;
+        }
+        if (orders.length) {
+          const { error } = await sb.from('orders').upsert(orders.map(orderToRow), { onConflict: 'id' });
+          if (error) throw error;
+        }
+        try { await sb.rpc('sync_os_number_seq'); } catch (e) {}
+        setCloudStatus(`${orders.length} OS e ${clients.length} clientes enviados.`, 'ok');
+        if (!silent) alert('Dados enviados para a nuvem com sucesso!');
+      } catch (e) {
+        setCloudStatus('Falha ao enviar: ' + (e.message || e), 'error');
+        if (!silent) alert('Não foi possível enviar para a nuvem.\n\n' + (e.message || e));
+      } finally {
+        cloudBusy = false;
+      }
+    }
+
+    async function cloudPullAll(silent = false) {
+      if (cloudBusy) return;
+      cloudBusy = true;
+      setCloudStatus('Buscando dados na nuvem...', 'busy');
+      try {
+        const sb = await getSupabase();
+        const [clientsRes, ordersRes] = await Promise.all([
+          sb.from('clients').select('*'),
+          sb.from('orders').select('*')
+        ]);
+        if (clientsRes.error) throw clientsRes.error;
+        if (ordersRes.error) throw ordersRes.error;
+
+        const clientsMerge = mergeRecords(clients, (clientsRes.data || []).map(rowToClient));
+        const ordersMerge = mergeRecords(orders, (ordersRes.data || []).map(rowToOrder));
+
+        clients = clientsMerge.list;
+        orders = ordersMerge.list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        osSeq = Math.max(osSeq, maxExistingOSNumber());
+        try { localStorage.setItem(STORAGE_KEY_SEQ, String(osSeq)); } catch (e) {}
+
+        persistData();
+        renderKPIs();
+        renderStatusFilters();
+        renderOSList();
+        renderClientsList();
+        lucide.createIcons();
+
+        const msg = `${ordersMerge.added} OS nova(s), ${ordersMerge.changed} atualizada(s) na nuvem.`;
+        setCloudStatus(msg, 'ok');
+        if (!silent) alert('Download concluído!\n\n' + msg);
+      } catch (e) {
+        setCloudStatus('Falha ao baixar: ' + (e.message || e), 'error');
+        if (!silent) alert('Não foi possível baixar os dados da nuvem.\n\n' + (e.message || e));
+      } finally {
+        cloudBusy = false;
+      }
     }
 
     // =========================================================================
@@ -614,7 +941,7 @@
         const active = btn.dataset.nav === tab;
         btn.className = btn.className.includes('flex-col')
           ? `nav-btn flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold ${active ? 'text-blue-600' : 'text-slate-500'}`
-          : `nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition ${active ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'}`;
+          : `nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition ${active ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`;
       });
 
       if (tab === 'dashboard') {
@@ -631,6 +958,83 @@
       return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
+    // Escapa textos digitados pelo usuário antes de injetar via innerHTML
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[ch]));
+    }
+
+    function digitsOnly(value) {
+      return String(value ?? '').replace(/\D/g, '');
+    }
+
+    let osSeq = Math.max(
+      parseInt(localStorage.getItem(STORAGE_KEY_SEQ) || '0', 10) || 0,
+      0
+    );
+
+    function maxExistingOSNumber() {
+      return orders.reduce((acc, o) => {
+        const n = parseInt(digitsOnly(o.number), 10);
+        return Number.isFinite(n) && n > acc ? n : acc;
+      }, 0);
+    }
+
+    // Sincroniza o contador com o maior número já existente (dados antigos/backup)
+    osSeq = Math.max(osSeq, maxExistingOSNumber());
+
+    // Nunca reaproveita o número de uma OS excluída
+    function nextOSNumber() {
+      const next = Math.max(osSeq, maxExistingOSNumber()) + 1;
+      osSeq = next;
+      try {
+        localStorage.setItem(STORAGE_KEY_SEQ, String(next));
+      } catch (e) {}
+      return 'OS-' + String(next).padStart(4, '0');
+    }
+
+    // Garante que registros antigos/importados tenham todos os campos usados na tela
+    function normalizeOrder(o = {}) {
+      const price = Number(o.price) || 0;
+      return {
+        id: String(o.id || '').replace(/[^A-Za-z0-9_-]/g, '') || 'ORD-' + Date.now() + Math.random().toString(36).slice(2, 7),
+        number: String(o.number || '').replace(/[<>"'`\\]/g, '').trim(),
+        createdAt: o.createdAt || new Date().toISOString(),
+        clientName: o.clientName || '',
+        clientPhone: o.clientPhone || '',
+        clientCpf: o.clientCpf || '',
+        deviceBrand: o.deviceBrand || '',
+        deviceModel: o.deviceModel || '',
+        deviceColor: o.deviceColor || '',
+        deviceImei: o.deviceImei || '',
+        devicePass: o.devicePass || '',
+        pattern: Array.isArray(o.pattern) ? o.pattern : [],
+        checklist: Array.isArray(o.checklist) ? o.checklist : [],
+        defect: o.defect || '',
+        report: o.report || '',
+        parts: o.parts || '',
+        price,
+        deadline: o.deadline || '',
+        status: o.status || 'Aberta',
+        paid: !!o.paid,
+        paymentMethod: o.paymentMethod || 'PIX',
+        paidAmount: o.paidAmount != null ? Number(o.paidAmount) || 0 : price,
+        paidAt: o.paidAt || '',
+        updatedAt: o.updatedAt || o.createdAt || ''
+      };
+    }
+
+    function normalizeClient(c = {}) {
+      return {
+        id: String(c.id || '').replace(/[^A-Za-z0-9_-]/g, '') || 'CLI-' + Date.now() + Math.random().toString(36).slice(2, 7),
+        name: c.name || '',
+        phone: c.phone || '',
+        cpf: c.cpf || '',
+        updatedAt: c.updatedAt || ''
+      };
+    }
+
     function statusBadge(status) {
       const map = {
         'Aberta': 'bg-sky-50 text-sky-700 border-sky-200',
@@ -639,18 +1043,21 @@
         'Pronta para Retirada': 'bg-emerald-50 text-emerald-700 border-emerald-200',
         'Entregue': 'bg-slate-100 text-slate-700 border-slate-200'
       };
-      return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${map[status] || 'bg-slate-100 text-slate-700'}">${status}</span>`;
+      return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${map[status] || 'bg-slate-100 text-slate-700'}">${esc(status)}</span>`;
     }
 
     function renderKPIs() {
       const now = new Date();
-      const monthOrders = orders.filter(o => {
-        const d = new Date(o.createdAt);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      });
-      const monthRevenue = monthOrders
-        .filter(o => o.status === 'Pronta para Retirada' || o.status === 'Entregue' || o.paid)
-        .reduce((acc, o) => acc + Number(o.paidAmount || o.price || 0), 0);
+      const isCurrentMonth = dateStr => {
+        const d = new Date(dateStr);
+        return !isNaN(d) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      };
+
+      // Faturamento: usa a data de pagamento quando quitado; senão, a data de abertura
+      const monthRevenue = orders
+        .filter(o => o.paid || o.status === 'Pronta para Retirada' || o.status === 'Entregue')
+        .filter(o => isCurrentMonth(o.paid ? (o.paidAt || o.createdAt) : o.createdAt))
+        .reduce((acc, o) => acc + Number((o.paid ? o.paidAmount : o.price) || 0), 0);
 
       const cards = [
         { label: 'OS Abertas', value: orders.filter(o => o.status === 'Aberta').length, color: 'text-sky-600', icon: 'folder-open' },
@@ -661,7 +1068,7 @@
       ];
 
       document.getElementById('kpi-cards').innerHTML = cards.map(c => `
-        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs ${c.span || ''}">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm ${c.span || ''}">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold text-slate-500">${c.label}</span>
             <i data-lucide="${c.icon}" class="w-4 h-4 ${c.color}"></i>
@@ -718,21 +1125,21 @@
       }
 
       container.innerHTML = filtered.map(o => `
-        <div onclick="openOSDetail('${o.id}')" class="bg-white rounded-2xl border border-slate-200 p-4 hover:border-blue-400 hover:shadow-sm transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div onclick="openOSDetail('${esc(o.id)}')" class="bg-white rounded-2xl border border-slate-200 p-4 hover:border-blue-400 hover:shadow-sm transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div class="space-y-1">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="font-mono text-xs font-extrabold px-2 py-0.5 rounded-lg bg-slate-900 text-white">${o.number}</span>
+              <span class="font-mono text-xs font-extrabold px-2 py-0.5 rounded-lg bg-slate-900 text-white">${esc(o.number)}</span>
               ${statusBadge(o.status)}
               ${o.paid ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">Recibo Quitado</span>' : ''}
               <span class="text-xs text-slate-400">${new Date(o.createdAt).toLocaleDateString('pt-BR')}</span>
             </div>
-            <h4 class="font-bold text-slate-900 text-base">${o.deviceBrand} ${o.deviceModel} <span class="text-xs font-normal text-slate-500">${o.deviceColor ? `(${o.deviceColor})` : ''}</span></h4>
-            <p class="text-xs text-slate-600"><strong>Cliente:</strong> ${o.clientName} • ${o.clientPhone}</p>
-            <p class="text-xs text-slate-500 line-clamp-1"><strong>Defeito:</strong> ${o.defect}</p>
+            <h4 class="font-bold text-slate-900 text-base">${esc(o.deviceBrand)} ${esc(o.deviceModel)} <span class="text-xs font-normal text-slate-500">${o.deviceColor ? `(${esc(o.deviceColor)})` : ''}</span></h4>
+            <p class="text-xs text-slate-600"><strong>Cliente:</strong> ${esc(o.clientName)} • ${esc(o.clientPhone)}</p>
+            <p class="text-xs text-slate-500 line-clamp-1"><strong>Defeito:</strong> ${esc(o.defect)}</p>
           </div>
           <div class="flex sm:flex-col items-center sm:items-end justify-between border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100">
             <span class="text-base font-extrabold text-blue-600">${formatBRL(o.price)}</span>
-            <span class="text-xs font-semibold text-slate-400 inline-flex items-center gap-1">Ver detalhes <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
+            <span class="text-xs font-semibold text-slate-400 inline-flex items-center gap-1 whitespace-nowrap">Ver detalhes <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></span>
           </div>
         </div>
       `).join('');
@@ -747,7 +1154,7 @@
       document.getElementById('brand-buttons').innerHTML = brands.map(b => `
         <button type="button" onclick="selectBrand('${b}')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
           selectedBrand === b
-            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
             : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
         }">${b}</button>
       `).join('');
@@ -767,14 +1174,14 @@
       const brand = document.getElementById('os-device-brand').value;
       const filter = (document.getElementById('model-quick-filter').value || '').toLowerCase();
       const currentModel = document.getElementById('os-device-model').value;
-      const list = (DEVICE_CATALOG[brand] || []).filter(m => m.toLowerCase().includes(filter));
+      currentModelList = (DEVICE_CATALOG[brand] || []).filter(m => m.toLowerCase().includes(filter));
 
-      const btns = list.map(m => `
-        <button type="button" onclick="selectModel('${m.replace(/'/g, "\'")}')" class="text-left px-2.5 py-2 rounded-xl text-xs font-semibold border transition truncate ${
+      const btns = currentModelList.map((m, i) => `
+        <button type="button" onclick="selectModelAt(${i})" class="text-left px-2.5 py-2 rounded-xl text-xs font-semibold border transition truncate ${
           currentModel === m
             ? 'bg-blue-600 text-white border-blue-600'
             : 'bg-white text-slate-700 border-slate-200 hover:border-blue-400'
-        }">${m}</button>
+        }">${esc(m)}</button>
       `).join('');
 
       document.getElementById('model-buttons').innerHTML = btns + `
@@ -782,6 +1189,13 @@
           + Outro modelo
         </button>
       `;
+    }
+
+    function selectModelAt(index) {
+      const model = currentModelList[index];
+      if (model === undefined) return;
+      document.getElementById('os-device-model').value = model;
+      renderModelButtons();
     }
 
     function selectModel(model) {
@@ -893,12 +1307,18 @@
       selectedChecklist = [];
       patternSequence = [];
 
+      const orderToEdit = editId ? orders.find(x => x.id === editId) : null;
+      if (editId && !orderToEdit) {
+        alert('Esta Ordem de Serviço não existe mais.');
+        return;
+      }
+
       const select = document.getElementById('os-client-select');
       select.innerHTML = '<option value="">Selecionar cliente cadastrado...</option>' +
-        clients.map(c => `<option value="${c.id}">${c.name} (${c.phone})</option>`).join('');
+        clients.map(c => `<option value="${esc(c.id)}">${esc(c.name)} (${esc(c.phone)})</option>`).join('');
 
       if (editId) {
-        const o = orders.find(x => x.id === editId);
+        const o = orderToEdit;
         document.getElementById('modal-os-title').textContent = `Editar ${o.number}`;
         document.getElementById('os-client-name').value = o.clientName;
         document.getElementById('os-client-phone').value = o.clientPhone;
@@ -954,20 +1374,28 @@
       const clientCpf = document.getElementById('os-client-cpf').value.trim();
 
       // Garante cadastro automático do cliente caso ainda não exista
-      let existingClient = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase() && c.phone === clientPhone);
+      const phoneDigits = digitsOnly(clientPhone);
+      const cpfDigits = digitsOnly(clientCpf);
+      let existingClient = clients.find(c =>
+        (phoneDigits && digitsOnly(c.phone) === phoneDigits) ||
+        (cpfDigits && digitsOnly(c.cpf) === cpfDigits)
+      );
       if (!existingClient) {
-        existingClient = { id: 'CLI-' + Date.now(), name: clientName, phone: clientPhone, cpf: clientCpf };
+        existingClient = { id: 'CLI-' + Date.now(), name: clientName, phone: clientPhone, cpf: clientCpf, updatedAt: new Date().toISOString() };
         clients.unshift(existingClient);
-      } else if (clientCpf && !existingClient.cpf) {
-        existingClient.cpf = clientCpf;
+      } else {
+        existingClient.name = clientName;
+        existingClient.phone = clientPhone;
+        if (clientCpf) existingClient.cpf = clientCpf;
+        existingClient.updatedAt = new Date().toISOString();
       }
 
       const existingOrder = id ? orders.find(o => o.id === id) : null;
-      const nextNum = 'OS-' + String(orders.length + 1).padStart(4, '0');
+      const priceValue = Number(document.getElementById('os-price').value || 0);
 
       const payload = {
         id: id || 'ORD-' + Date.now(),
-        number: existingOrder ? existingOrder.number : nextNum,
+        number: existingOrder ? existingOrder.number : nextOSNumber(),
         createdAt: existingOrder ? existingOrder.createdAt : new Date().toISOString(),
         clientName,
         clientPhone,
@@ -982,13 +1410,14 @@
         defect: document.getElementById('os-defect').value.trim(),
         report: document.getElementById('os-report').value.trim(),
         parts: document.getElementById('os-parts').value.trim(),
-        price: Number(document.getElementById('os-price').value || 0),
+        price: priceValue,
         deadline: document.getElementById('os-deadline').value.trim(),
         status: document.getElementById('os-status').value,
         paid: existingOrder ? existingOrder.paid : false,
         paymentMethod: existingOrder ? existingOrder.paymentMethod : 'PIX',
-        paidAmount: existingOrder ? existingOrder.paidAmount : Number(document.getElementById('os-price').value || 0),
-        paidAt: existingOrder ? existingOrder.paidAt : ''
+        paidAmount: existingOrder?.paid ? existingOrder.paidAmount : priceValue,
+        paidAt: existingOrder ? existingOrder.paidAt : '',
+        updatedAt: new Date().toISOString()
       };
 
       if (existingOrder) {
@@ -1001,6 +1430,10 @@
       closeModal('modal-os-form');
       renderKPIs();
       renderOSList();
+
+      // Sincroniza com a nuvem (se houver internet)
+      cloudPushClient(existingClient.id);
+      cloudPushOrder(payload.id);
     }
 
     // =========================================================================
@@ -1015,12 +1448,15 @@
       document.getElementById('os-detail-content').innerHTML = `
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div class="flex items-center gap-2.5">
-            <span class="font-mono text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-900 text-white">${o.number}</span>
+            <span class="font-mono text-xs font-extrabold px-2.5 py-1 rounded-lg bg-slate-900 text-white">${esc(o.number)}</span>
             ${statusBadge(o.status)}
           </div>
           <div class="flex items-center gap-1.5">
-            <button onclick="closeModal('modal-os-detail'); openNewOSModal('${o.id}')" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+            <button onclick="closeModal('modal-os-detail'); openNewOSModal('${esc(o.id)}')" class="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100">
               Editar OS
+            </button>
+            <button onclick="deleteOS('${esc(o.id)}')" class="px-3 py-1.5 rounded-lg bg-white border border-rose-200 text-xs font-semibold text-rose-600 hover:bg-rose-50">
+              Excluir
             </button>
             <button onclick="closeModal('modal-os-detail')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700">
               <i data-lucide="x" class="w-5 h-5"></i>
@@ -1045,25 +1481,25 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div class="p-4 rounded-xl border border-slate-200 space-y-1">
               <span class="text-xs font-bold uppercase text-blue-600">Cliente</span>
-              <p class="font-bold text-slate-900">${o.clientName}</p>
-              <p class="text-xs text-slate-600">WhatsApp: ${o.clientPhone}</p>
-              ${o.clientCpf ? `<p class="text-xs text-slate-600">CPF: ${o.clientCpf}</p>` : ''}
+              <p class="font-bold text-slate-900">${esc(o.clientName)}</p>
+              <p class="text-xs text-slate-600">WhatsApp: ${esc(o.clientPhone)}</p>
+              ${o.clientCpf ? `<p class="text-xs text-slate-600">CPF: ${esc(o.clientCpf)}</p>` : ''}
             </div>
             <div class="p-4 rounded-xl border border-slate-200 space-y-1">
               <span class="text-xs font-bold uppercase text-blue-600">Aparelho</span>
-              <p class="font-bold text-slate-900">${o.deviceBrand} ${o.deviceModel} ${o.deviceColor ? `(${o.deviceColor})` : ''}</p>
-              <p class="text-xs text-slate-600">IMEI/Série: ${o.deviceImei || 'Não informado'}</p>
-              <p class="text-xs text-slate-600">Senha/PIN: ${o.devicePass || 'Nenhuma'} ${o.pattern?.length ? `• Padrão: ${o.pattern.join('→')}` : ''}</p>
+              <p class="font-bold text-slate-900">${esc(o.deviceBrand)} ${esc(o.deviceModel)} ${o.deviceColor ? `(${esc(o.deviceColor)})` : ''}</p>
+              <p class="text-xs text-slate-600">IMEI/Série: ${esc(o.deviceImei || 'Não informado')}</p>
+              <p class="text-xs text-slate-600">Senha/PIN: ${esc(o.devicePass || 'Nenhuma')} ${o.pattern?.length ? `• Padrão: ${esc(o.pattern.join('→'))}` : ''}</p>
             </div>
           </div>
 
           <div class="p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
-            <div><strong class="text-slate-700">Checklist de Entrada:</strong> ${o.checklist?.length ? o.checklist.join(', ') : 'Sem observações'}</div>
-            <div><strong class="text-slate-700">Defeito Relatado:</strong> ${o.defect}</div>
-            <div><strong class="text-slate-700">Laudo Técnico:</strong> ${o.report || 'Em análise'}</div>
-            <div><strong class="text-slate-700">Peças Utilizadas:</strong> ${o.parts || 'Nenhuma'}</div>
+            <div><strong class="text-slate-700">Checklist de Entrada:</strong> ${o.checklist?.length ? esc(o.checklist.join(', ')) : 'Sem observações'}</div>
+            <div><strong class="text-slate-700">Defeito Relatado:</strong> ${esc(o.defect)}</div>
+            <div><strong class="text-slate-700">Laudo Técnico:</strong> ${esc(o.report || 'Em análise')}</div>
+            <div><strong class="text-slate-700">Peças Utilizadas:</strong> ${esc(o.parts || 'Nenhuma')}</div>
             <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-sm">
-              <span><strong>Prazo:</strong> ${o.deadline || 'A combinar'}</span>
+              <span><strong>Prazo:</strong> ${esc(o.deadline || 'A combinar')}</span>
               <span class="text-lg font-extrabold text-blue-600">${formatBRL(o.price)}</span>
             </div>
           </div>
@@ -1132,28 +1568,54 @@
     }
 
     function quickChangeStatus(id, status) {
-      orders = orders.map(o => o.id === id ? { ...o, status } : o);
+      orders = orders.map(o => o.id === id ? { ...o, status, updatedAt: new Date().toISOString() } : o);
       persistData();
       renderKPIs();
       renderOSList();
       openOSDetail(id);
+      cloudPushOrder(id);
+    }
+
+    function deleteOS(id) {
+      const o = orders.find(x => x.id === id);
+      if (!o) return;
+      if (!confirm(`Excluir definitivamente a ${o.number} de ${o.clientName}?\n\nEssa ação não pode ser desfeita.`)) return;
+      orders = orders.filter(x => x.id !== id);
+      persistData();
+      closeModal('modal-os-detail');
+      renderKPIs();
+      renderStatusFilters();
+      renderOSList();
+      renderClientsList();
+      cloudDeleteOrder(id);
     }
 
     function saveReceiptPayment(id) {
       const method = document.getElementById(`rec-method-${id}`).value;
       const amount = Number(document.getElementById(`rec-amount-${id}`).value || 0);
+      if (!(amount > 0)) {
+        alert('Informe um valor pago maior que zero.');
+        return;
+      }
       orders = orders.map(o => o.id === id ? {
         ...o,
         paid: true,
         paymentMethod: method,
         paidAmount: amount,
         paidAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         status: o.status === 'Pronta para Retirada' ? 'Entregue' : o.status
       } : o);
       persistData();
       renderKPIs();
       renderOSList();
       openOSDetail(id);
+
+      const paidOrder = orders.find(o => o.id === id);
+      if (paidOrder) {
+        cloudPushOrder(id);
+        cloudInsertReceipt(paidOrder);
+      }
     }
 
     function sendWhatsApp(id, isReceipt) {
@@ -1218,35 +1680,35 @@
           <div style="text-align:center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 10px;">
             <strong style="font-size:${isThermal ? '15px' : '20px'};">ROBINHONETCELL</strong><br/>
             <span>Assistência Técnica & Loja de Celulares</span><br/>
-            <strong>${isReceipt ? 'RECIBO DE QUITAÇÃO E ENTREGA' : 'COMPROVANTE DE ORDEM DE SERVIÇO'} — ${o.number}</strong><br/>
-            <span style="font-size:10px;">Emitido em: ${todayStr}</span>
+            <strong>${isReceipt ? 'RECIBO DE QUITAÇÃO E ENTREGA' : 'COMPROVANTE DE ORDEM DE SERVIÇO'} — ${esc(o.number)}</strong><br/>
+            <span style="font-size:10px;">Emitido em: ${esc(todayStr)}</span>
           </div>
 
           <div style="margin-bottom: 8px;">
-            <strong>CLIENTE:</strong> ${o.clientName}<br/>
-            <strong>TELEFONE:</strong> ${o.clientPhone} ${o.clientCpf ? `| <strong>CPF:</strong> ${o.clientCpf}` : ''}
+            <strong>CLIENTE:</strong> ${esc(o.clientName)}<br/>
+            <strong>TELEFONE:</strong> ${esc(o.clientPhone)} ${o.clientCpf ? `| <strong>CPF:</strong> ${esc(o.clientCpf)}` : ''}
           </div>
 
           <div style="margin-bottom: 8px; border-top: 1px dashed #000; padding-top: 8px;">
-            <strong>APARELHO:</strong> ${o.deviceBrand} ${o.deviceModel} ${o.deviceColor ? `(${o.deviceColor})` : ''}<br/>
-            <strong>IMEI/SÉRIE:</strong> ${o.deviceImei || 'Não informado'}<br/>
-            <strong>STATUS:</strong> ${o.status}
+            <strong>APARELHO:</strong> ${esc(o.deviceBrand)} ${esc(o.deviceModel)} ${o.deviceColor ? `(${esc(o.deviceColor)})` : ''}<br/>
+            <strong>IMEI/SÉRIE:</strong> ${esc(o.deviceImei || 'Não informado')}<br/>
+            <strong>STATUS:</strong> ${esc(o.status)}
           </div>
 
           <div style="margin-bottom: 8px; border-top: 1px dashed #000; padding-top: 8px;">
-            <strong>DEFEITO RELATADO:</strong> ${o.defect}<br/>
-            ${o.checklist?.length ? `<strong>CHECKLIST:</strong> ${o.checklist.join(', ')}<br/>` : ''}
-            <strong>LAUDO / SERVIÇO:</strong> ${o.report || 'Conforme orçamento aprovado'}<br/>
-            ${o.parts ? `<strong>PEÇAS:</strong> ${o.parts}<br/>` : ''}
+            <strong>DEFEITO RELATADO:</strong> ${esc(o.defect)}<br/>
+            ${o.checklist?.length ? `<strong>CHECKLIST:</strong> ${esc(o.checklist.join(', '))}<br/>` : ''}
+            <strong>LAUDO / SERVIÇO:</strong> ${esc(o.report || 'Conforme orçamento aprovado')}<br/>
+            ${o.parts ? `<strong>PEÇAS:</strong> ${esc(o.parts)}<br/>` : ''}
           </div>
 
           <div style="margin-bottom: 10px; border-top: 1px dashed #000; padding-top: 8px;">
             ${isReceipt ? `
-              <strong>FORMA DE PAGAMENTO:</strong> ${o.paymentMethod || 'PIX'}<br/>
-              <strong>DATA DA QUITAÇÃO:</strong> ${paidDateStr}<br/>
+              <strong>FORMA DE PAGAMENTO:</strong> ${esc(o.paymentMethod || 'PIX')}<br/>
+              <strong>DATA DA QUITAÇÃO:</strong> ${esc(paidDateStr)}<br/>
               <strong style="font-size:${isThermal ? '13px' : '15px'};">VALOR PAGO: ${formatBRL(o.paidAmount || o.price)}</strong>
             ` : `
-              <strong>PRAZO ESTIMADO:</strong> ${o.deadline || 'A combinar'}<br/>
+              <strong>PRAZO ESTIMADO:</strong> ${esc(o.deadline || 'A combinar')}<br/>
               <strong style="font-size:${isThermal ? '13px' : '15px'};">VALOR TOTAL: ${formatBRL(o.price)}</strong>
             `}
           </div>
@@ -1257,7 +1719,7 @@
 
           <div style="display:flex; justify-content:space-between; gap:16px; margin-top:28px; text-align:center;">
             <div style="flex:1; border-top:1px solid #000; padding-top:4px; font-size:10px;">
-              Assinatura do Cliente<br/>${o.clientName}
+              Assinatura do Cliente<br/>${esc(o.clientName)}
             </div>
             <div style="flex:1; border-top:1px solid #000; padding-top:4px; font-size:10px;">
               RobinhoNetCell<br/>Responsável Técnico
@@ -1266,9 +1728,20 @@
         </div>
       `;
 
-      document.getElementById('print-area').classList.remove('hidden');
+      const area = document.getElementById('print-area');
+      const previousTitle = document.title;
+      const cleanup = () => {
+        area.classList.add('hidden');
+        document.title = previousTitle;
+        window.removeEventListener('afterprint', cleanup);
+      };
+
+      // Nome sugerido do PDF/impressão: "Recibo OS-0001 - Cliente"
+      document.title = `${isReceipt ? 'Recibo' : 'OS'} ${o.number} - ${o.clientName}`;
+      area.classList.remove('hidden');
+      window.addEventListener('afterprint', cleanup);
       window.print();
-      setTimeout(() => document.getElementById('print-area').classList.add('hidden'), 300);
+      setTimeout(cleanup, 2000);
     }
 
     // =========================================================================
@@ -1291,21 +1764,29 @@
 
     function runClientTracking(e) {
       if (e) e.preventDefault();
-      const num = document.getElementById('track-os-number').value.trim().toUpperCase();
-      const pin = document.getElementById('track-os-pin').value.replace(/\D/g, '');
+      const typed = document.getElementById('track-os-number').value.trim().toUpperCase().replace(/\s+/g, '');
+      const pin = digitsOnly(document.getElementById('track-os-pin').value);
       const box = document.getElementById('track-result-box');
 
-      const o = orders.find(x => x.number.toUpperCase() === num);
+      const typedDigits = digitsOnly(typed);
+      const typedNumber = typedDigits ? String(parseInt(typedDigits, 10)) : '';
+      const o = orders.find(x => x.number.toUpperCase() === typed) ||
+        (typedNumber && orders.find(x => String(parseInt(digitsOnly(x.number), 10)) === typedNumber));
+
       if (!o) {
-        box.innerHTML = `<div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-semibold">Ordem de Serviço <strong>${num}</strong> não encontrada. Confira o número no seu comprovante.</div>`;
+        box.innerHTML = `<div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-semibold">Ordem de Serviço <strong>${esc(typed)}</strong> não encontrada. Confira o número no seu comprovante.</div>`;
         return;
       }
 
-      const phoneDigits = (o.clientPhone || '').replace(/\D/g, '');
-      const cpfDigits = (o.clientCpf || '').replace(/\D/g, '');
-      const validPin = !pin || phoneDigits.endsWith(pin) || cpfDigits.endsWith(pin);
+      const phoneDigits = digitsOnly(o.clientPhone);
+      const cpfDigits = digitsOnly(o.clientCpf);
 
-      if (!validPin) {
+      if (pin.length !== 4) {
+        box.innerHTML = `<div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-semibold">Informe os <strong>4 últimos dígitos</strong> do telefone ou CPF cadastrado nesta OS.</div>`;
+        return;
+      }
+
+      if (!phoneDigits.endsWith(pin) && !cpfDigits.endsWith(pin)) {
         box.innerHTML = `<div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 font-semibold">Os 4 últimos dígitos informados não conferem com o cadastro desta OS.</div>`;
         return;
       }
@@ -1317,9 +1798,9 @@
         <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-4">
           <div class="flex items-center justify-between">
             <div>
-              <span class="text-xs font-mono font-bold text-slate-500">${o.number}</span>
-              <h4 class="font-bold text-slate-900 text-base">${o.deviceBrand} ${o.deviceModel}</h4>
-              <p class="text-xs text-slate-500">Cliente: ${o.clientName.split(' ')[0]}***</p>
+              <span class="text-xs font-mono font-bold text-slate-500">${esc(o.number)}</span>
+              <h4 class="font-bold text-slate-900 text-base">${esc(o.deviceBrand)} ${esc(o.deviceModel)}</h4>
+              <p class="text-xs text-slate-500">Cliente: ${esc(o.clientName.split(' ')[0] || '')}***</p>
             </div>
             ${statusBadge(o.status)}
           </div>
@@ -1339,8 +1820,8 @@
           </div>
 
           <div class="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
-            <div><strong>Defeito informado:</strong> ${o.defect}</div>
-            <div><strong>Laudo / Serviço:</strong> ${o.report || 'Em avaliação técnica'}</div>
+            <div><strong>Defeito informado:</strong> ${esc(o.defect)}</div>
+            <div><strong>Laudo / Serviço:</strong> ${esc(o.report || 'Em avaliação técnica')}</div>
             <div class="pt-1 flex justify-between font-bold text-sm text-blue-600">
               <span>Valor do Serviço:</span>
               <span>${formatBRL(o.price)}</span>
@@ -1359,16 +1840,36 @@
 
     function saveNewClient(e) {
       e.preventDefault();
-      clients.unshift({
-        id: 'CLI-' + Date.now(),
-        name: document.getElementById('cli-name').value.trim(),
-        phone: document.getElementById('cli-phone').value.trim(),
-        cpf: document.getElementById('cli-cpf').value.trim()
-      });
+      const name = document.getElementById('cli-name').value.trim();
+      const phone = document.getElementById('cli-phone').value.trim();
+      const cpf = document.getElementById('cli-cpf').value.trim();
+      const phoneDigits = digitsOnly(phone);
+      const cpfDigits = digitsOnly(cpf);
+
+      const existing = clients.find(c =>
+        (phoneDigits && digitsOnly(c.phone) === phoneDigits) ||
+        (cpfDigits && digitsOnly(c.cpf) === cpfDigits)
+      );
+
+      let clientId;
+      if (existing) {
+        existing.name = name;
+        existing.phone = phone;
+        if (cpf) existing.cpf = cpf;
+        existing.updatedAt = new Date().toISOString();
+        clientId = existing.id;
+        alert(`Cliente já cadastrado: ${existing.name}. Os dados foram atualizados.`);
+      } else {
+        const created = { id: 'CLI-' + Date.now(), name, phone, cpf, updatedAt: new Date().toISOString() };
+        clients.unshift(created);
+        clientId = created.id;
+      }
+
       persistData();
       e.target.reset();
       closeModal('modal-client-form');
       renderClientsList();
+      cloudPushClient(clientId);
     }
 
     function renderClientsList() {
@@ -1388,21 +1889,25 @@
       }
 
       container.innerHTML = filtered.map(c => {
-        const history = orders.filter(o => o.clientName.toLowerCase() === c.name.toLowerCase());
+        const phoneDigits = digitsOnly(c.phone);
+        const history = orders.filter(o =>
+          (phoneDigits && digitsOnly(o.clientPhone) === phoneDigits) ||
+          o.clientName.toLowerCase() === c.name.toLowerCase()
+        );
         return `
           <div class="bg-white rounded-2xl border border-slate-200 p-4 space-y-2">
             <div class="flex items-center justify-between">
               <div>
-                <h4 class="font-bold text-slate-900">${c.name}</h4>
-                <p class="text-xs text-slate-500">${c.phone} ${c.cpf ? `• CPF: ${c.cpf}` : ''}</p>
+                <h4 class="font-bold text-slate-900">${esc(c.name)}</h4>
+                <p class="text-xs text-slate-500">${esc(c.phone)} ${c.cpf ? `• CPF: ${esc(c.cpf)}` : ''}</p>
               </div>
               <span class="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold">${history.length} OS</span>
             </div>
             ${history.length ? `
               <div class="pt-2 border-t border-slate-100 space-y-1">
                 ${history.map(h => `
-                  <div onclick="openOSDetail('${h.id}')" class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 hover:bg-blue-50 cursor-pointer">
-                    <span><strong>${h.number}</strong> — ${h.deviceBrand} ${h.deviceModel}</span>
+                  <div onclick="openOSDetail('${esc(h.id)}')" class="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 hover:bg-blue-50 cursor-pointer">
+                    <span><strong>${esc(h.number)}</strong> — ${esc(h.deviceBrand)} ${esc(h.deviceModel)}</span>
                     <span>${statusBadge(h.status)}</span>
                   </div>
                 `).join('')}
@@ -1416,13 +1921,16 @@
     // =========================================================================
     // EXPORTAÇÃO DO APP (INDEX.HTML) E BACKUP (.JSON)
     // =========================================================================
-    function openBackupModal() { document.getElementById('modal-backup').classList.remove('hidden'); }
+    function openBackupModal() {
+      document.getElementById('modal-backup').classList.remove('hidden');
+      lucide.createIcons();
+      cloudTest(true);
+    }
     function openInstallModal() { document.getElementById('modal-install').classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
     function exportAppHTML() {
-      const html = '<!DOCTYPE html>
-' + document.documentElement.outerHTML;
+      const html = PRISTINE_HTML;
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -1446,14 +1954,25 @@
       reader.onload = ev => {
         try {
           const parsed = JSON.parse(ev.target.result);
-          if (Array.isArray(parsed.orders)) orders = parsed.orders;
-          if (Array.isArray(parsed.clients)) clients = parsed.clients;
+          if (!Array.isArray(parsed.orders) && !Array.isArray(parsed.clients)) {
+            throw new Error('estrutura');
+          }
+          if ((orders.length || clients.length) &&
+            !confirm('Substituir os dados atuais pelos dados do backup? Os registros atuais serão apagados.')) {
+            e.target.value = '';
+            return;
+          }
+          if (Array.isArray(parsed.orders)) orders = parsed.orders.map(normalizeOrder);
+          if (Array.isArray(parsed.clients)) clients = parsed.clients.map(normalizeClient);
+          osSeq = Math.max(osSeq, maxExistingOSNumber());
           persistData();
           switchTab('dashboard');
           closeModal('modal-backup');
           alert('Backup restaurado com sucesso!');
         } catch (err) {
-          alert('Arquivo JSON inválido.');
+          alert('Arquivo JSON inválido ou fora do padrão de backup do RobinhoNetCell.');
+        } finally {
+          e.target.value = '';
         }
       };
       reader.readAsText(file);
@@ -1463,15 +1982,34 @@
       if (!confirm('Tem certeza que deseja apagar todos os clientes e Ordens de Serviço?')) return;
       orders = [];
       clients = [];
+      osSeq = 0;
+      try {
+        localStorage.removeItem(STORAGE_KEY_SEQ);
+      } catch (e) {}
       persistData();
       switchTab('dashboard');
       closeModal('modal-backup');
     }
 
-    // Inicialização
+    // =========================================================================
+    // INICIALIZAÇÃO
+    // =========================================================================
+    // Guarda uma cópia do HTML original (antes de renderizar dados dinâmicos)
+    // para que "Baixar index.html" gere um arquivo limpo e reutilizável.
+    const PRISTINE_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      ['modal-os-form', 'modal-os-detail', 'modal-client-track', 'modal-client-form', 'modal-backup', 'modal-install']
+        .forEach(id => document.getElementById(id)?.classList.add('hidden'));
+    });
+
     initPWAAssets();
     initPatternGrid();
     switchTab('dashboard');
+
+    // Sincroniza com a nuvem ao abrir (mescla os dados, nunca apaga)
+    setTimeout(() => { cloudPullAll(true); }, 1200);
   </script>
 </body>
 </html>
