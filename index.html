@@ -1926,6 +1926,7 @@
       try {
         const blob = await receiptPDFBlob(o);
         const name = receiptFileName(o);
+        const link = await shortLinkFor(o);
         const file = new File([blob], name, { type: 'application/pdf' });
         const canAttach = typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] });
         const text = `*${STORE_INFO.name} — RECIBO DE QUITAÇÃO*
@@ -1942,7 +1943,7 @@
 ` +
           `${canAttach ? 'Segue o recibo em PDF anexado.' : 'O PDF do recibo foi baixado neste aparelho — anexe o arquivo ao enviar.'}
 ` +
-          `Acompanhe: ${trackingLink(o)}`;
+          `Acompanhe: ${link}`;
 
         if (canAttach) {
           await navigator.share({ files: [file], text });
@@ -1962,10 +1963,12 @@
     // =========================================================================
     // WHATSAPP (OS) — RECIBO SEMPRE EM PDF
     // =========================================================================
-    function sendWhatsApp(id, isReceipt) {
+    async function sendWhatsApp(id, isReceipt) {
       const o = orders.find(x => x.id === id);
       if (!o) return;
       if (isReceipt) { sendReceiptPDF(id); return; }
+      const win = window.open('', '_blank');
+      const link = await shortLinkFor(o);
       const cleanPhone = o.clientPhone.replace(/\D/g, '');
       const fullPhone = cleanPhone.length <= 11 ? '55' + cleanPhone : cleanPhone;
 
@@ -2001,8 +2004,9 @@
 ` +
           `Prazo: ${o.deadline || 'A combinar'}`;
 
-      const finalText = text.includes(trackingLink(o)) ? text : text + `\n\nAcompanhe sua OS em tempo real: ${trackingLink(o)}`;
-      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(finalText)}`, '_blank');
+      const finalText = text.includes(link) ? text : text + `\n\nAcompanhe sua OS em tempo real: ${link}`;
+      const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(finalText)}`;
+      if (win) win.location.href = url; else window.open(url, '_blank');
     }
 
     // =========================================================================
@@ -2224,10 +2228,22 @@
       return `${base}?os=${encodeURIComponent(o.number)}&pin=${encodeURIComponent(pin)}`;
     }
 
+    // Link curto (r.html?c=CODIGO) gerado no Supabase; se falhar, usa o link completo
+    async function shortLinkFor(o) {
+      const pin = digitsOnly(o.clientPhone).slice(-4) || digitsOnly(o.clientCpf).slice(-4);
+      try {
+        const code = await rpcSupabase('create_short_link', { p_order_number: o.number, p_pin: pin });
+        if (code) return new URL('r.html', appDirectoryUrl()).href + '?c=' + encodeURIComponent(code);
+      } catch (e) {
+        console.warn('[link curto]', e.message || e);
+      }
+      return trackingLink(o);
+    }
+
     async function copyTrackingLink(id) {
       const o = orders.find(x => x.id === id);
       if (!o) return;
-      const link = trackingLink(o);
+      const link = await shortLinkFor(o);
       try {
         await navigator.clipboard.writeText(link);
       } catch (e) {
@@ -2243,9 +2259,11 @@
       alert('Link de acompanhamento copiado!\n\n' + link);
     }
 
-    function sendTrackingWhatsApp(id) {
+    async function sendTrackingWhatsApp(id) {
       const o = orders.find(x => x.id === id);
       if (!o) return;
+      const win = window.open('', '_blank');
+      const link = await shortLinkFor(o);
       const cleanPhone = o.clientPhone.replace(/\D/g, '');
       const fullPhone = cleanPhone.length <= 11 ? '55' + cleanPhone : cleanPhone;
       const text = `*ROBINHONETCELL — ACOMPANHE SUA OS*
@@ -2256,12 +2274,12 @@
         `Acesse o link abaixo para ver o andamento do seu aparelho (${o.deviceBrand} ${o.deviceModel}) sem precisar ligar:
 
 ` +
-        `${trackingLink(o)}
+        `${link}
 
 ` +
         `O status é atualizado automaticamente pela loja.`;
-      const finalText = text.includes(trackingLink(o)) ? text : text + `\n\nAcompanhe sua OS em tempo real: ${trackingLink(o)}`;
-      window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(finalText)}`, '_blank');
+      const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`;
+      if (win) win.location.href = url; else window.open(url, '_blank');
     }
 
     function openClientTrackModal() {
@@ -2622,7 +2640,7 @@
       try { return sessionStorage.getItem(SESSION_KEY_ADMIN) === '1'; } catch (e) { return false; }
     }
 
-    async function rpcAdmin(nome, args) {
+    async function rpcSupabase(nome, args) {
       const sb = await getSupabase();
       const { data, error } = await sb.rpc(nome, args);
       if (error) throw error;
@@ -2667,7 +2685,7 @@
       btn.disabled = true;
       try {
         if (gateMode === 'login') {
-          const ok = await rpcAdmin('check_admin_password', { p_password: pass });
+          const ok = await rpcSupabase('check_admin_password', { p_password: pass });
           if (!ok) { setGateError('Senha incorreta.'); return; }
         } else {
           if (pass.length < ADMIN_MIN_LENGTH) {
@@ -2675,7 +2693,7 @@
             return;
           }
           if (pass !== document.getElementById('gate-pass2').value) { setGateError('As senhas não conferem.'); return; }
-          const ok = await rpcAdmin('change_admin_password', {
+          const ok = await rpcSupabase('change_admin_password', {
             p_current: document.getElementById('gate-current').value,
             p_new: pass
           });

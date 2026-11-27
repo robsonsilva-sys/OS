@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Acompanhamento da OS — RobinhoNetCell</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: Inter, Arial, sans-serif; background: #f8fafc; color: #334155; }
+    .box { text-align: center; padding: 24px; max-width: 320px; }
+    .spin { width: 28px; height: 28px; margin: 0 auto 12px; border: 3px solid #cbd5e1; border-top-color: #059669; border-radius: 50%; animation: s 0.9s linear infinite; }
+    @keyframes s { to { transform: rotate(360deg); } }
+    a { color: #059669; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div id="spin" class="spin"></div>
+    <p id="msg">Abrindo o acompanhamento da sua OS...</p>
+  </div>
+
+  <script>
+    // Link curto: resolve o código no Supabase e leva para a página do cliente
+    const SUPABASE_URL = 'https://zubrrdburxbdduksfhxr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_ix-GkEENtRSnuPwAv9OvqQ_4TidAc83';
+
+    function falhar() {
+      document.getElementById('spin').style.display = 'none';
+      document.getElementById('msg').innerHTML =
+        'Link inválido ou expirado. Peça um novo link à loja.';
+    }
+
+    (async function () {
+      const code = (new URLSearchParams(location.search).get('c') || '').trim().toUpperCase();
+      if (!/^[A-Z0-9]{4,12}$/.test(code)) return falhar();
+      try {
+        const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/resolve_short_link', {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ p_code: code })
+        });
+        if (!r.ok) return falhar();
+        const rows = await r.json();
+        const row = rows && rows[0];
+        if (!row) return falhar();
+        location.replace('cliente.html?os=' + encodeURIComponent(row.order_number) + '&pin=' + encodeURIComponent(row.pin));
+      } catch (e) {
+        falhar();
+      }
+    })();
+  </script>
+</body>
+</html>
