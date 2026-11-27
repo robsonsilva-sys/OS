@@ -2614,23 +2614,19 @@
     // =========================================================================
     // SENHA DE ACESSO À EDIÇÃO (guarda só o hash SHA-256 neste navegador)
     // =========================================================================
-    const STORAGE_KEY_ADMIN = 'robinhonetcell_admin_hash_v1';
     const SESSION_KEY_ADMIN = 'robinhonetcell_admin_ok';
     const ADMIN_MIN_LENGTH = 6;
     let gateMode = 'login';
 
-    function getAdminHash() {
-      try { return localStorage.getItem(STORAGE_KEY_ADMIN) || ''; } catch (e) { return ''; }
-    }
-
-    async function hashPassword(senha) {
-      const bytes = new TextEncoder().encode('robinhonetcell:' + senha);
-      const buf = await crypto.subtle.digest('SHA-256', bytes);
-      return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
-    }
-
     function isAppUnlocked() {
-      try { return !!getAdminHash() && sessionStorage.getItem(SESSION_KEY_ADMIN) === '1'; } catch (e) { return false; }
+      try { return sessionStorage.getItem(SESSION_KEY_ADMIN) === '1'; } catch (e) { return false; }
+    }
+
+    async function rpcAdmin(nome, args) {
+      const sb = await getSupabase();
+      const { data, error } = await sb.rpc(nome, args);
+      if (error) throw error;
+      return data;
     }
 
     function setGateError(msg) {
@@ -2640,22 +2636,18 @@
     }
 
     function showAccessGate(mode) {
-      gateMode = mode || (getAdminHash() ? 'login' : 'create');
+      gateMode = mode === 'change' ? 'change' : 'login';
       const isLogin = gateMode === 'login';
-      const isCreate = gateMode === 'create';
       const isChange = gateMode === 'change';
-      document.getElementById('gate-title').textContent =
-        isCreate ? 'Criar senha de acesso' : isChange ? 'Alterar senha' : 'Acesso restrito';
-      document.getElementById('gate-subtitle').textContent = isCreate
-        ? `Defina uma senha (mínimo de ${ADMIN_MIN_LENGTH} caracteres) para liberar a edição das OS.`
-        : isChange ? 'Confirme a senha atual e defina a nova.'
+      document.getElementById('gate-title').textContent = isChange ? 'Alterar senha' : 'Acesso restrito';
+      document.getElementById('gate-subtitle').textContent = isChange
+        ? 'Confirme a senha atual e defina a nova.'
         : 'Digite a senha da loja para editar as OS.';
       document.getElementById('gate-current-wrap').classList.toggle('hidden', !isChange);
       document.getElementById('gate-confirm-wrap').classList.toggle('hidden', isLogin);
       document.getElementById('gate-pass-label').textContent = isChange ? 'Nova senha' : 'Senha';
       document.getElementById('gate-pass').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
-      document.getElementById('gate-submit').textContent =
-        isLogin ? 'Entrar' : isCreate ? 'Criar senha e entrar' : 'Salvar nova senha';
+      document.getElementById('gate-submit').textContent = isLogin ? 'Entrar' : 'Salvar nova senha';
       document.getElementById('gate-cancel').classList.toggle('hidden', !isChange);
       document.getElementById('access-gate-form').reset();
       setGateError('');
@@ -2671,32 +2663,37 @@
     async function submitAccessGate(e) {
       e.preventDefault();
       const pass = document.getElementById('gate-pass').value;
-      const stored = getAdminHash();
+      const btn = document.getElementById('gate-submit');
+      btn.disabled = true;
       try {
         if (gateMode === 'login') {
-          if (await hashPassword(pass) !== stored) { setGateError('Senha incorreta.'); return; }
+          const ok = await rpcAdmin('check_admin_password', { p_password: pass });
+          if (!ok) { setGateError('Senha incorreta.'); return; }
         } else {
-          if (gateMode === 'change') {
-            const atual = document.getElementById('gate-current').value;
-            if (await hashPassword(atual) !== stored) { setGateError('A senha atual está incorreta.'); return; }
-          }
           if (pass.length < ADMIN_MIN_LENGTH) {
             setGateError(`A senha precisa ter pelo menos ${ADMIN_MIN_LENGTH} caracteres.`);
             return;
           }
           if (pass !== document.getElementById('gate-pass2').value) { setGateError('As senhas não conferem.'); return; }
-          localStorage.setItem(STORAGE_KEY_ADMIN, await hashPassword(pass));
+          const ok = await rpcAdmin('change_admin_password', {
+            p_current: document.getElementById('gate-current').value,
+            p_new: pass
+          });
+          if (!ok) { setGateError('A senha atual está incorreta.'); return; }
+          alert('Senha alterada com sucesso.');
         }
         sessionStorage.setItem(SESSION_KEY_ADMIN, '1');
         closeAccessGate();
       } catch (err) {
-        setGateError('Não foi possível verificar a senha neste navegador.');
+        setGateError('Não foi possível verificar a senha agora: ' + (err.message || err) + ' (confira se o SQL supabase/migration_senha_admin.sql foi executado).');
+      } finally {
+        btn.disabled = false;
       }
     }
 
     function lockApp() {
       try { sessionStorage.removeItem(SESSION_KEY_ADMIN); } catch (e) {}
-      showAccessGate();
+      showAccessGate('login');
     }
 
     function resetDatabase() {
