@@ -77,6 +77,43 @@
 </head>
 <body class="min-h-screen flex flex-col md:flex-row">
 
+  <!-- SENHA DE ACESSO À ÁREA DE EDIÇÃO DAS OS -->
+  <div id="access-gate" class="fixed inset-0 z-[100] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <form id="access-gate-form" onsubmit="submitAccessGate(event)" class="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+          <i data-lucide="lock" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 id="gate-title" class="font-bold text-slate-900 leading-tight">Acesso restrito</h2>
+          <p id="gate-subtitle" class="text-xs text-slate-500">Digite a senha da loja para editar as OS.</p>
+        </div>
+      </div>
+
+      <div id="gate-current-wrap" class="hidden">
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Senha atual</label>
+        <input id="gate-current" type="password" autocomplete="current-password" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+      </div>
+
+      <div>
+        <label id="gate-pass-label" class="block text-xs font-semibold text-slate-600 mb-1">Senha</label>
+        <input id="gate-pass" type="password" autocomplete="current-password" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+      </div>
+
+      <div id="gate-confirm-wrap" class="hidden">
+        <label class="block text-xs font-semibold text-slate-600 mb-1">Confirmar senha</label>
+        <input id="gate-pass2" type="password" autocomplete="new-password" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+      </div>
+
+      <p id="gate-error" class="hidden text-xs font-semibold text-red-600"></p>
+
+      <div class="flex gap-2">
+        <button id="gate-cancel" type="button" onclick="closeAccessGate()" class="hidden flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-sm font-semibold hover:bg-slate-200">Cancelar</button>
+        <button id="gate-submit" type="submit" class="flex-1 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700">Entrar</button>
+      </div>
+    </form>
+  </div>
+
   <!-- MENU LATERAL DESKTOP -->
   <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200 z-30">
     <div class="p-6 border-b border-slate-100 flex items-center gap-3">
@@ -117,6 +154,14 @@
         <i data-lucide="smartphone" class="w-4 h-4 text-blue-600"></i>
         Instalar no iPhone
       </button>
+      <button onclick="showAccessGate('change')" class="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+        <i data-lucide="key-round" class="w-4 h-4 text-blue-600"></i>
+        Alterar senha de acesso
+      </button>
+      <button onclick="lockApp()" class="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+        <i data-lucide="lock" class="w-4 h-4 text-blue-600"></i>
+        Bloquear edição
+      </button>
     </div>
   </aside>
 
@@ -140,6 +185,9 @@
       </button>
       <button onclick="openInstallModal()" title="Instalar no iPhone" class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100">
         <i data-lucide="smartphone" class="w-5 h-5"></i>
+      </button>
+      <button onclick="lockApp()" title="Bloquear edição" class="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200">
+        <i data-lucide="lock" class="w-5 h-5"></i>
       </button>
     </div>
   </header>
@@ -2563,6 +2611,94 @@
       reader.readAsText(file);
     }
 
+    // =========================================================================
+    // SENHA DE ACESSO À EDIÇÃO (guarda só o hash SHA-256 neste navegador)
+    // =========================================================================
+    const STORAGE_KEY_ADMIN = 'robinhonetcell_admin_hash_v1';
+    const SESSION_KEY_ADMIN = 'robinhonetcell_admin_ok';
+    const ADMIN_MIN_LENGTH = 6;
+    let gateMode = 'login';
+
+    function getAdminHash() {
+      try { return localStorage.getItem(STORAGE_KEY_ADMIN) || ''; } catch (e) { return ''; }
+    }
+
+    async function hashPassword(senha) {
+      const bytes = new TextEncoder().encode('robinhonetcell:' + senha);
+      const buf = await crypto.subtle.digest('SHA-256', bytes);
+      return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function isAppUnlocked() {
+      try { return !!getAdminHash() && sessionStorage.getItem(SESSION_KEY_ADMIN) === '1'; } catch (e) { return false; }
+    }
+
+    function setGateError(msg) {
+      const el = document.getElementById('gate-error');
+      el.textContent = msg;
+      el.classList.toggle('hidden', !msg);
+    }
+
+    function showAccessGate(mode) {
+      gateMode = mode || (getAdminHash() ? 'login' : 'create');
+      const isLogin = gateMode === 'login';
+      const isCreate = gateMode === 'create';
+      const isChange = gateMode === 'change';
+      document.getElementById('gate-title').textContent =
+        isCreate ? 'Criar senha de acesso' : isChange ? 'Alterar senha' : 'Acesso restrito';
+      document.getElementById('gate-subtitle').textContent = isCreate
+        ? `Defina uma senha (mínimo de ${ADMIN_MIN_LENGTH} caracteres) para liberar a edição das OS.`
+        : isChange ? 'Confirme a senha atual e defina a nova.'
+        : 'Digite a senha da loja para editar as OS.';
+      document.getElementById('gate-current-wrap').classList.toggle('hidden', !isChange);
+      document.getElementById('gate-confirm-wrap').classList.toggle('hidden', isLogin);
+      document.getElementById('gate-pass-label').textContent = isChange ? 'Nova senha' : 'Senha';
+      document.getElementById('gate-pass').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+      document.getElementById('gate-submit').textContent =
+        isLogin ? 'Entrar' : isCreate ? 'Criar senha e entrar' : 'Salvar nova senha';
+      document.getElementById('gate-cancel').classList.toggle('hidden', !isChange);
+      document.getElementById('access-gate-form').reset();
+      setGateError('');
+      document.getElementById('access-gate').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+      setTimeout(() => document.getElementById(isChange ? 'gate-current' : 'gate-pass')?.focus(), 50);
+    }
+
+    function closeAccessGate() {
+      document.getElementById('access-gate').classList.add('hidden');
+    }
+
+    async function submitAccessGate(e) {
+      e.preventDefault();
+      const pass = document.getElementById('gate-pass').value;
+      const stored = getAdminHash();
+      try {
+        if (gateMode === 'login') {
+          if (await hashPassword(pass) !== stored) { setGateError('Senha incorreta.'); return; }
+        } else {
+          if (gateMode === 'change') {
+            const atual = document.getElementById('gate-current').value;
+            if (await hashPassword(atual) !== stored) { setGateError('A senha atual está incorreta.'); return; }
+          }
+          if (pass.length < ADMIN_MIN_LENGTH) {
+            setGateError(`A senha precisa ter pelo menos ${ADMIN_MIN_LENGTH} caracteres.`);
+            return;
+          }
+          if (pass !== document.getElementById('gate-pass2').value) { setGateError('As senhas não conferem.'); return; }
+          localStorage.setItem(STORAGE_KEY_ADMIN, await hashPassword(pass));
+        }
+        sessionStorage.setItem(SESSION_KEY_ADMIN, '1');
+        closeAccessGate();
+      } catch (err) {
+        setGateError('Não foi possível verificar a senha neste navegador.');
+      }
+    }
+
+    function lockApp() {
+      try { sessionStorage.removeItem(SESSION_KEY_ADMIN); } catch (e) {}
+      showAccessGate();
+    }
+
     function resetDatabase() {
       if (!confirm('Tem certeza que deseja apagar todos os clientes e Ordens de Serviço?')) return;
       orders = [];
@@ -2593,6 +2729,7 @@
     initPWAAssets();
     initPatternGrid();
     switchTab('dashboard');
+    if (isAppUnlocked()) closeAccessGate(); else showAccessGate();
 
     // Sincroniza com a nuvem ao abrir (mescla os dados, nunca apaga)
     setTimeout(() => { cloudPullAll(true).then(openTrackingFromURL); }, 1200);
